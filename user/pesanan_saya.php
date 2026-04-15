@@ -9,6 +9,7 @@ if(!isset($_SESSION['user'])){
 
 $id_user = $_SESSION['user']['id_user'];
 
+/* Ambil semua pesanan user */
 $data = mysqli_query($koneksi,
 "SELECT * FROM pesanan 
  WHERE id_user='$id_user' 
@@ -60,11 +61,13 @@ while($d=mysqli_fetch_array($data)){
     // Badge warna status
     $badge = "secondary";
 
-    if($d['status']=="menunggu pembayaran") $badge="warning";
-    elseif($d['status']=="menunggu verifikasi") $badge="info";
-    elseif($d['status']=="diproses") $badge="primary";
-    elseif($d['status']=="dikirim") $badge="success";
-    elseif($d['status']=="selesai") $badge="dark";
+    switch($d['status']){
+        case "menunggu pembayaran": $badge="warning"; break;
+        case "menunggu verifikasi": $badge="info"; break;
+        case "diproses": $badge="primary"; break;
+        case "dikirim": $badge="success"; break;
+        case "selesai": $badge="dark"; break;
+    }
 ?>
 
 <tr>
@@ -80,24 +83,21 @@ while($d=mysqli_fetch_array($data)){
 
     <td>
 
-        <!-- DETAIL -->
+        <!-- DETAIL PESANAN -->
         <a href="detail_pesanan.php?id=<?php echo $d['id_pesanan']; ?>"
            class="btn btn-outline-primary btn-sm">
            Detail
         </a>
 
-        <!-- TRANSFER → MUNCUL UPLOAD -->
-        <?php if(
-            $d['metode_pembayaran']=="Transfer" 
-            && $d['status']=="menunggu pembayaran"
-        ){ ?>
+        <!-- TRANSFER → tombol upload muncul hanya jika metode Transfer dan status menunggu pembayaran -->
+        <?php if($d['metode_pembayaran']=="Transfer" && $d['status']=="menunggu pembayaran"){ ?>
             <a href="upload_bukti.php?id=<?php echo $d['id_pesanan']; ?>"
                class="btn btn-success btn-sm">
                Upload Bukti
             </a>
         <?php } ?>
 
-        <!-- COD -->
+        <!-- COD → hanya tampil badge -->
         <?php if($d['metode_pembayaran']=="COD"){ ?>
             <span class="badge bg-secondary">
                 COD - Menunggu Admin

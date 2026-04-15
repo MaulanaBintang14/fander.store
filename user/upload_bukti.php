@@ -10,7 +10,7 @@ if(!isset($_SESSION['user'])){
 $id_user = $_SESSION['user']['id_user'];
 $id_pesanan = $_GET['id'] ?? 0;
 
-/* VALIDASI PESANAN MILIK USER */
+// Validasi bahwa pesanan milik user
 $cek = mysqli_query($koneksi,"
     SELECT * FROM pesanan 
     WHERE id_pesanan='$id_pesanan' 
@@ -18,20 +18,24 @@ $cek = mysqli_query($koneksi,"
 ");
 
 if(mysqli_num_rows($cek) == 0){
-    echo "<script>alert('Pesanan tidak ditemukan');location='pesanan_saya.php';</script>";
+    echo "<script>alert('Pesanan tidak ditemukan'); location='pesanan_saya.php';</script>";
     exit;
 }
 
 if(isset($_POST['kirim'])){
 
+    if(!isset($_FILES['bukti']) || $_FILES['bukti']['error'] != 0){
+        echo "<script>alert('File tidak valid');</script>";
+        exit;
+    }
+
     $nama_file  = $_FILES['bukti']['name'];
     $tmp        = $_FILES['bukti']['tmp_name'];
     $ext        = strtolower(pathinfo($nama_file, PATHINFO_EXTENSION));
-
-    $allowed = ['jpg','jpeg','png'];
+    $allowed    = ['jpg','jpeg','png'];
 
     if(!in_array($ext, $allowed)){
-        echo "<script>alert('File harus JPG/JPEG/PNG');</script>";
+        echo "<script>alert('File harus JPG, JPEG atau PNG');</script>";
         exit;
     }
 
@@ -46,19 +50,16 @@ if(isset($_POST['kirim'])){
 
         $tanggal = date('Y-m-d H:i:s');
 
-        // hapus bukti lama jika ada
-        mysqli_query($koneksi,"
-            DELETE FROM pembayaran 
-            WHERE id_pesanan='$id_pesanan'
-        ");
+        // Hapus bukti lama jika ada
+        mysqli_query($koneksi,"DELETE FROM pembayaran WHERE id_pesanan='$id_pesanan'");
 
-        // insert baru
+        // Insert bukti baru
         mysqli_query($koneksi,"
             INSERT INTO pembayaran (id_pesanan, bukti_transfer, tanggal_bayar)
             VALUES ('$id_pesanan','$file_baru','$tanggal')
         ");
 
-        // update status pesanan
+        // Update status pesanan menjadi menunggu verifikasi
         mysqli_query($koneksi,"
             UPDATE pesanan 
             SET status='menunggu verifikasi'
@@ -67,7 +68,7 @@ if(isset($_POST['kirim'])){
 
         echo "<script>
             alert('Bukti pembayaran berhasil dikirim');
-            location='pesanan_saya.php';
+            window.location='pesanan_saya.php';
         </script>";
         exit;
 
@@ -81,7 +82,7 @@ if(isset($_POST['kirim'])){
 <!DOCTYPE html>
 <html>
 <head>
-<title>Upload Bukti</title>
+<title>Upload Bukti Pembayaran</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
@@ -90,8 +91,12 @@ if(isset($_POST['kirim'])){
 <hr>
 
 <form method="post" enctype="multipart/form-data">
-    <input type="file" name="bukti" class="form-control mb-3" required>
+    <div class="mb-3">
+        <label>Foto Bukti Transfer</label>
+        <input type="file" name="bukti" class="form-control" accept="image/*" required>
+    </div>
     <button class="btn btn-primary" name="kirim">Kirim Bukti</button>
+    <a href="pesanan_saya.php" class="btn btn-secondary">Kembali</a>
 </form>
 
 </div>

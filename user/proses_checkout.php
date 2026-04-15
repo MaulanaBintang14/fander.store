@@ -3,81 +3,64 @@ session_start();
 include '../config/koneksi.php';
 
 if(!isset($_SESSION['user'])){
-    echo "<pre>";
-print_r($_SESSION);
-echo "</pre>";
-exit;
-
+    echo "<script>alert('Silakan login'); window.location='login.php';</script>";
+    exit;
 }
 
 $id_user = $_SESSION['user']['id_user'];
 $tanggal = date('Y-m-d H:i:s');
 
-// Hitung total harga
-$total_bayar = 0;
-
+// Total belanja
+$total_belanja = 0;
 foreach($_SESSION['keranjang'] as $id_produk => $jumlah){
-
-    $data = mysqli_query($koneksi, "SELECT * FROM produk WHERE id_produk='$id_produk'");
-    $produk = mysqli_fetch_array($data);
-
+    $produk = mysqli_fetch_assoc(mysqli_query($koneksi,"SELECT * FROM produk WHERE id_produk='$id_produk'"));
     $subtotal = $produk['harga'] * $jumlah;
-    $total_bayar += $subtotal;
+    $total_belanja += $subtotal;
 }
 
-// Ambil input dari form
-$nama = $_POST['nama'];
+// Ambil metode pembayaran
+$id_metode = $_POST['id_metode'];
+$metode_data = mysqli_fetch_assoc(mysqli_query($koneksi,"SELECT * FROM metode_pembayaran WHERE id_metode='$id_metode'"));
+$metode = $metode_data['nama_metode'];
+$tipe   = $metode_data['tipe'];
+
+// Ambil data penerima
+$nama   = $_POST['nama'];
 $alamat = $_POST['alamat'];
-$telepon = $_POST['telepon'];
-$metode = $_POST['metode'];
+$telepon= $_POST['telepon'];
 
-// INSERT KE TABEL PESANAN
-$query = mysqli_query($koneksi,
-"INSERT INTO pesanan
-(id_user, tanggal, total_harga, status, metode_pembayaran, nama_penerima, alamat, telepon)
+// Status otomatis
+$status = ($tipe=="COD") ? "menunggu konfirmasi admin" : "menunggu pembayaran";
+
+// Insert pesanan
+mysqli_query($koneksi,"
+INSERT INTO pesanan
+(id_user, tanggal, total_harga, status, id_metode, nama_penerima, alamat, telepon)
 VALUES
-('$id_user','$tanggal','$total_bayar','menunggu pembayaran','$metode','$nama','$alamat','$telepon')");
+('$id_user','$tanggal','$total_belanja','$status','$id_metode','$nama','$alamat','$telepon')
+");
 
-if($metode == "Transfer Bank"){
-    $status = "menunggu pembayaran";
-} else {
-    $status = "menunggu konfirmasi admin";
-}
-
-mysqli_query($koneksi,
-"INSERT INTO pesanan
-(id_user, tanggal, total_harga, status, metode_pembayaran, nama_penerima, alamat, telepon)
-VALUES
-('$id_user','$tanggal','$total_bayar','$status','$metode','$nama','$alamat','$telepon')");
-
-
-// Ambil id pesanan terakhir
 $id_pesanan = mysqli_insert_id($koneksi);
 
-// Simpan detail pesanan
+// Insert detail pesanan
 foreach($_SESSION['keranjang'] as $id_produk => $jumlah){
+    $produk = mysqli_fetch_assoc(mysqli_query($koneksi,"SELECT * FROM produk WHERE id_produk='$id_produk'"));
+    $subtotal = $produk['harga'] * $jumlah;
 
-    $data = mysqli_query($koneksi, "SELECT * FROM produk WHERE id_produk='$id_produk'");
-    $produk = mysqli_fetch_array($data);
-
-    $harga = $produk['harga'];
-    $subtotal = $harga * $jumlah;
-
-    mysqli_query($koneksi,
-    "INSERT INTO detail_pesanan(id_pesanan, id_produk, jumlah, subtotal)
-    VALUES('$id_pesanan','$id_produk','$jumlah','$subtotal')");
+    mysqli_query($koneksi,"
+    INSERT INTO detail_pesanan(id_pesanan, id_produk, jumlah, subtotal)
+    VALUES('$id_pesanan','$id_produk','$jumlah','$subtotal')
+    ");
 
     // Kurangi stok
-    mysqli_query($koneksi,
-    "UPDATE produk SET stok = stok - $jumlah WHERE id_produk='$id_produk'");
+    mysqli_query($koneksi,"UPDATE produk SET stok = stok - $jumlah WHERE id_produk='$id_produk'");
 }
 
 // Kosongkan keranjang
 unset($_SESSION['keranjang']);
 
 echo "<script>
-alert('Checkout berhasil! Silakan lakukan pembayaran');
-window.location='http://localhost/fander_store/user/pesanan_saya.php';
+alert('Checkout berhasil! Silakan lanjutkan sesuai metode pembayaran.');
+window.location='pesanan_saya.php';
 </script>";
-
 ?>

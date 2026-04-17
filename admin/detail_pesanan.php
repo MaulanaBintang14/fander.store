@@ -116,6 +116,11 @@ while($d = mysqli_fetch_array($detail)){
        Verifikasi Pembayaran
     </a>
 
+    <a href="cetak_resi.php?id=<?php echo $id; ?>" 
+        class="btn btn-dark">
+        Download Resi (PDF)
+    </a>
+
 <?php } else { ?>
 
     <div class="alert alert-warning">

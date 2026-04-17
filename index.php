@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'config/koneksi.php';
+$id_kategori = $_GET['kategori'] ?? null;
 ?>
 
 <!DOCTYPE html>
@@ -423,6 +424,22 @@ body::before {
     .navbar-brand {
         font-size: 1.3rem;
     }
+        /* Hilangin scrollbar tapi tetap bisa scroll */
+    .d-flex::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Hover effect */
+    .d-flex a div:hover {
+        background: #f8f9fa;
+        border-color: #d4af37;
+    }
+
+    .active-kategori {
+    background: #d4af37 !important;
+    color: white !important;
+    border-color: #d4af37 !important;
+    }
 }
 </style>
 
@@ -434,6 +451,7 @@ body::before {
 <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
 <div class="container">
 
+    <!-- LOGO -->
     <a class="navbar-brand d-flex align-items-center" href="index.php">
         <img src="assets/images/logo.png"
              class="me-2 rounded-circle"
@@ -445,29 +463,67 @@ body::before {
         <span class="navbar-toggler-icon"></span>
     </button>
 
-    <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto align-items-center">
+    <div class="collapse navbar-collapse">
+
+        <!-- MENU TENGAH -->
+        <ul class="navbar-nav mx-auto">
+
+            <li class="nav-item">
+                <a class="nav-link" href="index.php">Beranda</a>
+            </li>
+
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                    Produk
+                </a>
+                <ul class="dropdown-menu">
+
+                <?php
+                $kat = mysqli_query($koneksi,"SELECT * FROM kategori");
+                while($k = mysqli_fetch_array($kat)){
+                ?>
+
+                <li>
+                    <a class="dropdown-item" href="index.php?kategori=<?php echo $k['id_kategori']; ?>">
+                        <?php echo $k['nama_kategori']; ?>
+                    </a>
+                </li>
+
+                <?php } ?>
+
+                </ul>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="#">Cara Order</a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="#">Kontak</a>
+            </li>
+
+        </ul>
+
+        <!-- RIGHT -->
+        <ul class="navbar-nav align-items-center">
 
             <?php if(isset($_SESSION['user'])){ ?>
 
-            <!-- NOTIFIKASI -->
+            <!-- NOTIF -->
             <li class="nav-item me-3">
                 <a href="user/notifikasi.php" class="nav-link position-relative">
-                    <i class="fa fa-bell fa-lg"></i>
+                    <i class="fa fa-bell"></i>
 
                     <?php
                     $id_user = $_SESSION['user']['id_user'];
-
-                    $cek = mysqli_query($koneksi,
-                    "SELECT * FROM notifikasi WHERE id_user='$id_user' AND status='unread'");
-
+                    $cek = mysqli_query($koneksi,"SELECT * FROM notifikasi WHERE id_user='$id_user' AND status='unread'");
                     $jumlah = mysqli_num_rows($cek);
 
                     if($jumlah > 0){
                     ?>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill notification-badge">
-                            <?php echo $jumlah; ?>
-                        </span>
+                    <span class="badge notification-badge position-absolute top-0 start-100 translate-middle">
+                        <?php echo $jumlah; ?>
+                    </span>
                     <?php } ?>
                 </a>
             </li>
@@ -475,43 +531,38 @@ body::before {
             <?php } ?>
 
             <!-- KERANJANG -->
-            <li class="nav-item me-3">
+            <li class="nav-item me-2">
                 <a href="user/keranjang.php" class="btn btn-warning btn-sm">
-                    <i class="fa fa-shopping-cart"></i> Keranjang
+                    <i class="fa fa-shopping-cart"></i>
                 </a>
             </li>
 
             <?php if(isset($_SESSION['user'])){ ?>
 
-                <li class="nav-item me-3">
+                <li class="nav-item me-2">
                     <span class="user-greeting">
-                        <i class="fa fa-user me-2"></i>Halo, <?php echo $_SESSION['user']['nama']; ?>
+                        Halo, <?php echo $_SESSION['user']['nama']; ?>
                     </span>
                 </li>
 
                 <li class="nav-item">
-                    <a href="user/logout.php" class="btn btn-danger btn-sm">
-                        <i class="fa fa-sign-out-alt me-1"></i>Logout
-                    </a>
+                    <a href="user/logout.php" class="btn btn-danger btn-sm">Logout</a>
                 </li>
 
             <?php } else { ?>
 
                 <li class="nav-item me-2">
-                    <a href="user/login.php" class="btn btn-success btn-sm">
-                        <i class="fa fa-sign-in-alt me-1"></i>Login
-                    </a>
+                    <a href="user/login.php" class="btn btn-success btn-sm">Login</a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="user/register.php" class="btn btn-primary btn-sm">
-                        <i class="fa fa-user-plus me-1"></i>Daftar
-                    </a>
+                    <a href="user/register.php" class="btn btn-primary btn-sm">Daftar</a>
                 </li>
 
             <?php } ?>
 
         </ul>
+
     </div>
 
 </div>
@@ -522,66 +573,115 @@ body::before {
 <div class="container">
     <div class="content-wrapper leather-texture">
         <div class="p-5">
-            <h1 class="page-title fade-in">Koleksi Jaket Kulit Terbaru</h1>
-            <div class="title-underline fade-in"></div>
 
-            <div class="row">
+        <!-- ================= HERO ================= -->
+        <div class="text-center mb-5">
+            <h1 class="page-title fade-in">Fander Leather</h1>
+            <p class="text-muted">Produk Kulit Premium - Handmade & Berkualitas</p>
 
+            <a href="#produk" class="btn btn-warning mt-3">
+                Belanja Sekarang
+            </a>
+        </div>
+
+        <!-- ================= KATEGORI ================= -->
+           <div class="mb-4">
+
+            <div class="d-flex gap-3 overflow-auto pb-2" style="scrollbar-width: none;">
             <?php
-            $data = mysqli_query($koneksi,"SELECT * FROM produk ORDER BY id_produk DESC");
+            $kat = mysqli_query($koneksi,"SELECT * FROM kategori");
+            while($k = mysqli_fetch_array($kat)){
 
-            if(mysqli_num_rows($data) > 0){
-                $delay = 0;
-                while($d = mysqli_fetch_array($data)){
+                $active = ($id_kategori == $k['id_kategori']) ? 'active-kategori' : '';
             ?>
 
-            <div class="col-lg-3 col-md-6 mb-4 fade-in" style="animation-delay: <?php echo $delay; ?>s;">
-            <div class="card product-card h-100">
+            <a href="index.php?kategori=<?php echo $k['id_kategori']; ?>" 
+            class="text-decoration-none text-dark">
 
-                <img src="admin/uploads/<?php echo $d['gambar']; ?>" 
-                     class="card-img-top" alt="<?php echo $d['nama_produk']; ?>">
+                <div class="d-flex align-items-center px-3 py-2 border rounded shadow-sm <?php echo $active; ?>"
+                    style="
+                    background: white;
+                    min-width: 180px;
+                    font-size: 14px;
+                    white-space: nowrap;
+                    transition: 0.2s;
+                    ">
 
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <?php echo $d['nama_produk']; ?>
-                    </h5>
+                    <i class="fa fa-tag me-2"></i>
+                    <?php echo $k['nama_kategori']; ?>
 
-                    <p class="price">
-                        Rp <?php echo number_format($d['harga']); ?>
-                    </p>
+                </div>
 
-                    <div class="stock-info">
-                        <i class="fa fa-layer-group me-1"></i>Stok: <?php echo $d['stok']; ?>
+            </a>
+
+            <?php } ?>
+
+        </div>
+        
+        <!-- ================= PRODUK TERBARU ================= -->
+         <h4 class="mb-3">
+        <?php
+        if(!empty($id_kategori)){
+            $k = mysqli_fetch_assoc(mysqli_query($koneksi,"SELECT nama_kategori FROM kategori WHERE id_kategori='$id_kategori'"));
+            echo "Kategori: ".$k['nama_kategori'];
+        } else {
+            echo "Semua Produk";
+        }
+        ?>
+        </h4>
+        <h3 class="mb-3 fw-bold">Produk Terbaru</h3>
+        
+        <?php
+        if($id_kategori){
+            $data = mysqli_query($koneksi,"
+                SELECT * FROM produk 
+                WHERE id_kategori='$id_kategori'
+                ORDER BY id_produk DESC
+            ");
+        } else {
+            $data = mysqli_query($koneksi,"
+                SELECT * FROM produk 
+                ORDER BY id_produk DESC
+            ");
+        }
+        ?>
+
+        <div class="row">
+
+            <?php while($d = mysqli_fetch_array($data)){ ?>
+
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card product-card h-100">
+
+                    <img src="admin/uploads/<?php echo $d['gambar']; ?>" 
+                        class="card-img-top">
+
+                    <div class="card-body">
+                        <h5 class="card-title"><?php echo $d['nama_produk']; ?></h5>
+
+                        <p class="price">
+                            Rp <?php echo number_format($d['harga']); ?>
+                        </p>
+
+                        <div class="stock-info">
+                            Stok: <?php echo $d['stok']; ?>
+                        </div>
                     </div>
-                </div>
 
-                <div class="card-footer">
-                    <a href="detail_produk.php?id=<?php echo $d['id_produk']; ?>" 
-                       class="btn detail-btn">
-                        <i class="fa fa-eye me-2"></i>Lihat Detail
-                    </a>
-                </div>
+                    <div class="card-footer">
+                        <a href="detail_produk.php?id=<?php echo $d['id_produk']; ?>" 
+                        class="btn detail-btn">
+                            Lihat Detail
+                        </a>
+                    </div>
 
-            </div>
-            </div>
-
-            <?php 
-                $delay += 0.1;
-                } 
-            } else { 
-            ?>
-
-            <div class="col-12">
-                <div class="alert no-products fade-in">
-                    <i class="fa fa-shopping-bag fa-3x mb-3"></i>
-                    <h4>Koleksi Sedang Dipersiapkan</h4>
-                    <p class="mb-0">Jaket kulit premium kami sedang dalam tahap kurasi. Silakan kembali lagi untuk melihat koleksi eksklusif terbaru!</p>
                 </div>
             </div>
 
             <?php } ?>
 
-            </div>
+        </div>
+
         </div>
     </div>
 </div>

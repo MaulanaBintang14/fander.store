@@ -1,45 +1,63 @@
 <?php
-include 'header.php';
 include '../config/koneksi.php';
+
+$data = mysqli_query($koneksi,"SELECT * FROM pesanan ORDER BY id_pesanan DESC");
 ?>
 
-<h3>Data Pesanan User</h3>
+<!DOCTYPE html>
+<html>
+<head>
+<title>Data Pesanan</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+<div class="container mt-4">
+
+<h3>Data Pesanan</h3>
 <hr>
 
 <table class="table table-bordered">
 <tr>
     <th>No</th>
     <th>Tanggal</th>
-    <th>Nama Penerima</th>
     <th>Total</th>
-    <th>Metode</th>
     <th>Status</th>
     <th>Aksi</th>
 </tr>
 
-<?php
-$no = 1;
-$data = mysqli_query($koneksi, "SELECT * FROM pesanan ORDER BY id_pesanan DESC");
-
-while($d = mysqli_fetch_array($data)){
-?>
+<?php $no=1; while($d=mysqli_fetch_array($data)){ ?>
 
 <tr>
     <td><?php echo $no++; ?></td>
     <td><?php echo $d['tanggal']; ?></td>
-    <td><?php echo $d['nama_penerima']; ?></td>
     <td>Rp <?php echo number_format($d['total_harga']); ?></td>
-    <td><?php echo $d['metode_pembayaran']; ?></td>
+    <td><?php echo $d['status']; ?></td>
+
     <td>
-        <span class="badge bg-info">
-            <?php echo $d['status']; ?>
-        </span>
-    </td>
-    <td>
+
+        <!-- DETAIL -->
         <a href="detail_pesanan.php?id=<?php echo $d['id_pesanan']; ?>" 
-           class="btn btn-primary btn-sm">
-           Detail
-        </a>
+           class="btn btn-info btn-sm">Detail</a>
+
+        <!-- VERIFIKASI -->
+        <?php if($d['status']=="menunggu verifikasi"){ ?>
+        <a href="verifikasi_pembayaran.php?id=<?php echo $d['id_pesanan']; ?>" 
+           class="btn btn-success btn-sm">Verifikasi</a>
+        <?php } ?>
+
+        <!-- KIRIM -->
+        <?php if($d['status']=="diproses"){ ?>
+        <a href="kirim_pesanan.php?id=<?php echo $d['id_pesanan']; ?>" 
+           class="btn btn-warning btn-sm">Kirim</a>
+        <?php } ?>
+
+        <!-- SELESAI -->
+        <?php if($d['status']=="dikirim"){ ?>
+        <a href="selesai_pesanan.php?id=<?php echo $d['id_pesanan']; ?>" 
+           class="btn btn-primary btn-sm">Selesai</a>
+        <?php } ?>
+
     </td>
 </tr>
 
@@ -47,4 +65,6 @@ while($d = mysqli_fetch_array($data)){
 
 </table>
 
-<?php include 'footer.php'; ?>
+</div>
+</body>
+</html>

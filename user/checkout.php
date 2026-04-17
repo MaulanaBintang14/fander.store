@@ -2,24 +2,50 @@
 session_start();
 include '../config/koneksi.php';
 
+// CEK LOGIN
 if(!isset($_SESSION['user'])){
     echo "<script>alert('Silakan login'); window.location='login.php';</script>";
     exit;
 }
 
+// CEK KERANJANG
 if(!isset($_SESSION['keranjang']) || empty($_SESSION['keranjang'])){
     echo "<script>alert('Keranjang masih kosong'); window.location='keranjang.php';</script>";
     exit;
 }
-
-$id_user = $_SESSION['user']['id_user'];
 ?>
 
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Checkout</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<title>Checkout</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+.payment-box {
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.payment-box:hover {
+    border-color: #0d6efd;
+    background: #f8f9fa;
+}
+
+.payment-box input {
+    margin-right: 10px;
+}
+
+.payment-logo {
+    height: 35px;
+    margin-right: 10px;
+}
+</style>
+
 </head>
 
 <body>
@@ -30,83 +56,157 @@ $id_user = $_SESSION['user']['id_user'];
 
 <form method="POST" action="proses_checkout.php">
 
-<!-- Data Penerima -->
+<!-- DATA PENERIMA -->
 <div class="mb-3">
     <label>Nama Penerima</label>
     <input type="text" name="nama" class="form-control" required>
 </div>
 
-<div class="mb-3">
-    <label>Alamat Lengkap</label>
-    <textarea name="alamat" class="form-control" required></textarea>
+<div class="row">
+
+<div class="col-md-6 mb-3">
+    <label>Provinsi</label>
+    <input type="text" name="provinsi" class="form-control" required>
+</div>
+
+<div class="col-md-6 mb-3">
+    <label>Kota / Kabupaten</label>
+    <input type="text" name="kota" class="form-control" required>
+</div>
+
+<div class="col-md-6 mb-3">
+    <label>Kecamatan</label>
+    <input type="text" name="kecamatan" class="form-control" required>
+</div>
+
+<div class="col-md-6 mb-3">
+    <label>Desa</label>
+    <input type="text" name="desa" class="form-control" required>
+</div>
+
+<div class="col-md-6 mb-3">
+    <label>Kode Pos</label>
+    <input type="text" name="kode_pos" class="form-control" required>
+</div>
+
+<div class="col-md-12 mb-3">
+    <label>Detail Alamat (Jalan, RT/RW, dll)</label>
+    <textarea name="detail_alamat" class="form-control" required></textarea>
+</div>
+
 </div>
 
 <div class="mb-3">
-    <label>No Telepon</label>
+    <label>No HP</label>
     <input type="text" name="telepon" class="form-control" required>
 </div>
 
-<!-- Metode Pembayaran -->
+<!-- ================= METODE PEMBAYARAN ================= -->
+<h5 class="mt-4">Pilih Pembayaran</h5>
+
 <?php
-$metode = mysqli_query($koneksi, "SELECT * FROM metode_pembayaran ORDER BY id_metode ASC");
+$kategori = [
+    'bank' => 'Transfer Bank',
+    'ewallet' => 'E-Wallet',
+    'qris' => 'QRIS',
+    'cod' => 'COD'
+];
+
+foreach($kategori as $tipe => $label){
+
+    $q = mysqli_query($koneksi, "SELECT * FROM metode_pembayaran WHERE tipe='$tipe'");
+
+    if(mysqli_num_rows($q) > 0){
 ?>
-<div class="mb-3">
-    <label>Metode Pembayaran</label>
-    <select name="id_metode" class="form-control" required>
-        <option value="">-- Pilih Metode --</option>
-        <?php while($m = mysqli_fetch_array($metode)) { ?>
-            <option value="<?php echo $m['id_metode']; ?>">
-                <?php echo $m['nama_metode']; ?> (<?php echo $m['tipe']; ?>)
-            </option>
+
+<div class="card mb-3 shadow-sm">
+    <div class="card-header fw-bold bg-light">
+        <?php echo $label; ?>
+    </div>
+
+    <div class="card-body">
+
+        <?php while($m = mysqli_fetch_array($q)){ ?>
+
+        <label class="payment-box d-flex align-items-center">
+            <input type="radio" name="id_metode"
+                   value="<?php echo $m['id_metode']; ?>" required>
+
+            <!-- LOGO -->
+            <?php if(!empty($m['logo'])){ ?>
+                <img src="../uploads/logo/<?php echo $m['logo']; ?>" class="payment-logo">
+            <?php } ?>
+
+            <div>
+                <b><?php echo $m['nama_metode']; ?></b><br>
+
+                <!-- INFO PEMBAYARAN -->
+                <?php if($m['tipe'] != 'cod'){ ?>
+                <small class="text-muted">
+                    <?php echo $m['nomor']; ?> a.n <?php echo $m['atas_nama']; ?>
+                </small>
+                <?php } ?>
+            </div>
+        </label>
+
         <?php } ?>
-    </select>
+
+    </div>
+</div>
+
+<?php } } ?>
+
+<!-- QRIS AUTO MUNCUL -->
+<div id="qris-box" style="display:none;" class="text-center mt-3">
+    <h5>Scan QRIS</h5>
+    <img src="../uploads/qris.png" width="250">
 </div>
 
 <hr>
-<h5>Rincian Pesanan</h5>
 
-<table class="table table-bordered">
-<tr>
-    <th>Produk</th>
-    <th>Harga</th>
-    <th>Jumlah</th>
-    <th>Total</th>
-</tr>
+<h5>Rincian</h5>
 
 <?php
-$total_belanja = 0;
-foreach($_SESSION['keranjang'] as $id_produk => $jumlah){
-    $data = mysqli_query($koneksi, "SELECT * FROM produk WHERE id_produk='$id_produk'");
-    $d = mysqli_fetch_array($data);
+$total = 0;
 
-    $subtotal = $d['harga'] * $jumlah;
-    $total_belanja += $subtotal;
+foreach($_SESSION['keranjang'] as $id => $qty){
+    $q = mysqli_query($koneksi,"SELECT * FROM produk WHERE id_produk='$id'");
+    $d = mysqli_fetch_array($q);
+
+    $sub = $d['harga'] * $qty;
+    $total += $sub;
 ?>
-<tr>
-    <td><?php echo $d['nama_produk']; ?></td>
-    <td>Rp <?php echo number_format($d['harga']); ?></td>
-    <td><?php echo $jumlah; ?></td>
-    <td>Rp <?php echo number_format($subtotal); ?></td>
-</tr>
+
+<p><?php echo $d['nama_produk']; ?> (<?php echo $qty; ?>)</p>
+
 <?php } ?>
 
-<tr>
-    <th colspan="3">Total Bayar</th>
-    <th>Rp <?php echo number_format($total_belanja); ?></th>
-</tr>
-</table>
+<h4>Total: Rp <?php echo number_format($total); ?></h4>
 
-<input type="hidden" name="total_belanja" value="<?php echo $total_belanja; ?>">
+<input type="hidden" name="total_belanja" value="<?php echo $total; ?>">
 
-<button type="submit" class="btn btn-success">
-    Konfirmasi Checkout
-</button>
-
-<a href="keranjang.php" class="btn btn-secondary">
-    Kembali
-</a>
+<button class="btn btn-success">Checkout</button>
 
 </form>
+
 </div>
+
+<!-- SCRIPT QRIS -->
+<script>
+const radios = document.querySelectorAll('input[name="id_metode"]');
+
+radios.forEach(r => {
+    r.addEventListener('change', function(){
+        let label = this.closest('.payment-box').innerText;
+
+        if(label.includes('QRIS')){
+            document.getElementById('qris-box').style.display = 'block';
+        } else {
+            document.getElementById('qris-box').style.display = 'none';
+        }
+    });
+});
+</script>
+
 </body>
 </html>

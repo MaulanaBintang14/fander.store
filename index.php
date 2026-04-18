@@ -1,7 +1,79 @@
 <?php
 session_start();
 include 'config/koneksi.php';
-$id_kategori = $_GET['kategori'] ?? null;
+?>
+
+<?php
+$search = $_GET['search'] ?? '';
+$id_kategori = $_GET['kategori'] ?? '';
+
+$search = mysqli_real_escape_string($koneksi, $search);
+$id_kategori = mysqli_real_escape_string($koneksi, $id_kategori);
+
+if(!empty($search) && !empty($id_kategori)){
+    $stmt = mysqli_prepare($koneksi, "
+        SELECT * FROM produk 
+        WHERE id_kategori = ?
+        AND (nama_produk LIKE ? OR deskripsi LIKE ?)
+        ORDER BY id_produk DESC
+    ");
+
+    $like = "%$search%";
+    mysqli_stmt_bind_param($stmt, "sss", $id_kategori, $like, $like);
+    mysqli_stmt_execute($stmt);
+    $produk = mysqli_stmt_get_result($stmt);
+}
+elseif(!empty($search)){
+   $stmt = mysqli_prepare($koneksi,"
+    SELECT * FROM produk 
+    WHERE nama_produk LIKE ? OR deskripsi LIKE ?
+    ORDER BY id_produk DESC
+    ");
+
+    $like = "%$search%";
+    mysqli_stmt_bind_param($stmt, "ss", $like, $like);
+    mysqli_stmt_execute($stmt);
+    $produk = mysqli_stmt_get_result($stmt);
+}
+elseif(!empty($id_kategori)){
+
+    // ambil produk berdasarkan kategori
+    $stmt = mysqli_prepare($koneksi,"
+        SELECT * FROM produk 
+        WHERE id_kategori = ?
+        ORDER BY id_produk DESC
+    ");
+
+    mysqli_stmt_bind_param($stmt,"s",$id_kategori);
+    mysqli_stmt_execute($stmt);
+    $produk = mysqli_stmt_get_result($stmt);
+
+    // ambil nama kategori (buat judul)
+    $stmt_kat = mysqli_prepare($koneksi,"
+        SELECT nama_kategori FROM kategori WHERE id_kategori=?
+    ");
+    mysqli_stmt_bind_param($stmt_kat,"s",$id_kategori);
+    mysqli_stmt_execute($stmt_kat);
+    $res_kat = mysqli_stmt_get_result($stmt_kat);
+    $k = mysqli_fetch_assoc($res_kat);
+}
+else{
+    $produk = mysqli_query($koneksi,"
+        SELECT * FROM produk 
+        ORDER BY id_produk DESC
+    ");
+}
+?>
+
+<?php
+$produk_populer = mysqli_query($koneksi,"
+    SELECT p.*, SUM(dp.jumlah) as total_terjual
+    FROM produk p
+    LEFT JOIN detail_pesanan dp ON p.id_produk = dp.id_produk
+    GROUP BY p.id_produk
+    ORDER BY total_terjual DESC
+    LIMIT 4
+");
 ?>
 
 <!DOCTYPE html>
@@ -352,6 +424,7 @@ body::before {
 
 .notification-badge {
     animation: pulse 2s infinite;
+    animation: pulseNew 1.5s infinite;
     background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-bronze) 100%) !important;
     color: var(--text-dark) !important;
     border: 2px solid var(--leather-cream);
@@ -391,6 +464,12 @@ body::before {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+@keyframes pulseNew {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
 }
 
 .fade-in {
@@ -440,6 +519,33 @@ body::before {
     color: white !important;
     border-color: #d4af37 !important;
     }
+}
+
+.section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #3b2415;
+    position: relative;
+    display: inline-block;
+    margin-bottom: 20px;
+}
+
+.section-title::after {
+    content: "";
+    display: block;
+    width: 80px;
+    height: 4px;
+    margin-top: 8px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #d4af37, #8b5a2b);
+}
+
+/* garis tipis background */
+.section-divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, #d4af37, transparent);
+    margin: 20px 0 30px;
 }
 </style>
 
@@ -516,7 +622,7 @@ body::before {
 
                     <?php
                     $id_user = $_SESSION['user']['id_user'];
-                    $cek = mysqli_query($koneksi,"SELECT * FROM notifikasi WHERE id_user='$id_user' AND status='unread'");
+                    $cek = mysqli_query($koneksi,"SELECT COUNT(*) as total FROM notifikasi WHERE id_user='$id_user' AND status='unread'");
                     $jumlah = mysqli_num_rows($cek);
 
                     if($jumlah > 0){
@@ -527,7 +633,7 @@ body::before {
                     <?php } ?>
                 </a>
             </li>
-
+            
             <?php } ?>
 
             <!-- KERANJANG -->
@@ -583,95 +689,176 @@ body::before {
                 Belanja Sekarang
             </a>
         </div>
+        <div class="mt-4">
 
-        <!-- ================= KATEGORI ================= -->
-           <div class="mb-4">
+    <form method="GET" class="d-flex justify-content-center mb-4">
 
-            <div class="d-flex gap-3 overflow-auto pb-2" style="scrollbar-width: none;">
-            <?php
-            $kat = mysqli_query($koneksi,"SELECT * FROM kategori");
-            while($k = mysqli_fetch_array($kat)){
+        <?php if(!empty($id_kategori)){ ?>
+            <input type="hidden" name="kategori" value="<?php echo $id_kategori; ?>">
+        <?php } ?>
 
-                $active = ($id_kategori == $k['id_kategori']) ? 'active-kategori' : '';
-            ?>
+        <div class="input-group" style="max-width:600px;">
 
-            <a href="index.php?kategori=<?php echo $k['id_kategori']; ?>" 
-            class="text-decoration-none text-dark">
+            <input type="text" name="search"
+                class="form-control form-control-lg"
+                placeholder="Cari produk"
+                value="<?php echo htmlspecialchars($search); ?>">
 
-                <div class="d-flex align-items-center px-3 py-2 border rounded shadow-sm <?php echo $active; ?>"
-                    style="
-                    background: white;
-                    min-width: 180px;
-                    font-size: 14px;
-                    white-space: nowrap;
-                    transition: 0.2s;
-                    ">
-
-                    <i class="fa fa-tag me-2"></i>
-                    <?php echo $k['nama_kategori']; ?>
-
-                </div>
-
-            </a>
-
-            <?php } ?>
+            <button class="btn btn-warning px-4">
+                🔍 Cari
+            </button>
 
         </div>
-        
+
+    </form>
+
+
         <!-- ================= PRODUK TERBARU ================= -->
-         <h4 class="mb-3">
-        <?php
-        if(!empty($id_kategori)){
-            $k = mysqli_fetch_assoc(mysqli_query($koneksi,"SELECT nama_kategori FROM kategori WHERE id_kategori='$id_kategori'"));
-            echo "Kategori: ".$k['nama_kategori'];
-        } else {
-            echo "Semua Produk";
-        }
-        ?>
-        </h4>
-        <h3 class="mb-3 fw-bold">Produk Terbaru</h3>
-        
-        <?php
-        if($id_kategori){
-            $data = mysqli_query($koneksi,"
-                SELECT * FROM produk 
-                WHERE id_kategori='$id_kategori'
-                ORDER BY id_produk DESC
-            ");
-        } else {
-            $data = mysqli_query($koneksi,"
-                SELECT * FROM produk 
-                ORDER BY id_produk DESC
-            ");
-        }
-        ?>
+       <h3 class="section-title">
+            <?php
+                if(!empty($search)){
+                    echo "Hasil pencarian: " . htmlspecialchars($search);
+                }
+                elseif(!empty($id_kategori)){
+                     echo "Kategori: " . $k['nama_kategori'];
+                }
+                else{
+                    echo "Produk Terbaru";
+                }
+                ?>
+        </h3>
 
-        <div class="row">
+        <div class="section-divider"></div>
 
-            <?php while($d = mysqli_fetch_array($data)){ ?>
+<div id="produk">
+    <div class="row" id="produk-container">
+        <?php if($produk && mysqli_num_rows($produk) > 0){ ?>
 
-            <div class="col-lg-3 col-md-6 mb-4">
+        <?php while($d = mysqli_fetch_array($produk)){ ?>
+
+            <div class="col-md-3 mb-4">
+
+            <?php
+            $isNew = false;
+
+            if(!empty($d['created_at'])){
+                $tgl_produk = strtotime($d['created_at']);
+                $tgl_sekarang = time();
+
+                if(($tgl_sekarang - $tgl_produk) <= 604800){
+                    $isNew = true;
+                }
+            }
+            ?>
+
+            <div class="card product-card h-100 position-relative">
+
+            <?php if($isNew){ ?>
+                <span style="
+                    position:absolute;
+                    top:10px;
+                    left:10px;
+                    background:#d4af37;
+                    color:black;
+                    padding:5px 10px;
+                    font-size:12px;
+                    font-weight:bold;
+                    border-radius:10px;
+                    z-index:10;
+                ">
+                    NEW
+                </span>
+            <?php } ?>
+            <img src="admin/uploads/<?php echo trim($d['gambar']); ?>" 
+                class="card-img-top"
+                onerror="this.src='assets/no-image.png';">
+
+            <div class="card-body">
+
+                <h6 class="card-title"><?php echo $d['nama_produk']; ?></h6>
+
+                <div class="price">
+                    Rp <?php echo number_format($d['harga']); ?>
+                </div>
+
+                <div class="stock-info">
+                    Stok: <?php echo $d['stok']; ?>
+                </div>
+
+            </div>
+
+            <div class="card-footer">
+                <a href="detail_produk.php?id=<?php echo $d['id_produk']; ?>" 
+                class="detail-btn text-center d-block">
+                Lihat Detail
+                </a>
+            </div>
+
+        </div>
+
+        </div>
+
+        <?php } ?>
+
+        <?php } else { ?>
+
+    <div class="col-12">
+        <div class="no-products">
+            Produk tidak ditemukan!!!
+        </div>
+    </div>
+
+    <?php } ?>
+
+    </div>
+
+        </div>
+    </div>
+</div>
+                    
+ <!-- END CONTENT -->
+
+
+<!-- ================= PRODUK POPULER ================= -->
+ <div class="mt-5 p-4" style="
+    background: rgba(255,255,255,0.95);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(44, 24, 16, 0.15);
+    border: 1px solid rgba(212,175,55,0.2);
+    
+">
+
+    <h3 class="section-title">Produk Populer</h3>
+    <div class="section-divider"></div>
+    
+
+    <div class="row">
+        <?php if(mysqli_num_rows($produk_populer) > 0){ ?>
+            <?php while($p = mysqli_fetch_assoc($produk_populer)){ ?>
+
+            <div class="col-md-3 mb-4">
                 <div class="card product-card h-100">
 
-                    <img src="admin/uploads/<?php echo $d['gambar']; ?>" 
-                        class="card-img-top">
+                    <img src="admin/uploads/<?php echo $p['gambar']; ?>" 
+                        class="card-img-top"
+                        onerror="this.src='assets/no-image.png';">
 
                     <div class="card-body">
-                        <h5 class="card-title"><?php echo $d['nama_produk']; ?></h5>
+                        <h6 class="card-title"><?php echo $p['nama_produk']; ?></h6>
 
-                        <p class="price">
-                            Rp <?php echo number_format($d['harga']); ?>
-                        </p>
+                        <div class="price">
+                            Rp <?php echo number_format($p['harga']); ?>
+                        </div>
 
                         <div class="stock-info">
-                            Stok: <?php echo $d['stok']; ?>
+                            Terjual: <?php echo $p['total_terjual']; ?>
                         </div>
                     </div>
 
                     <div class="card-footer">
-                        <a href="detail_produk.php?id=<?php echo $d['id_produk']; ?>" 
-                        class="btn detail-btn">
-                            Lihat Detail
+                        <a href="detail_produk.php?id=<?php echo $p['id_produk']; ?>" 
+                        class="detail-btn text-center d-block">
+                        Lihat Detail
                         </a>
                     </div>
 
@@ -679,14 +866,10 @@ body::before {
             </div>
 
             <?php } ?>
-
-        </div>
-
-        </div>
+        <?php } ?>
+    </div>
     </div>
 </div>
-<!-- END CONTENT -->
-
 <!-- FOOTER -->
 <footer class="footer">
     <div class="container">
@@ -742,6 +925,28 @@ document.addEventListener('DOMContentLoaded', function() {
     
     navbar.addEventListener('mouseleave', function() {
         this.style.textShadow = 'none';
+    });
+
+    document.querySelectorAll('a[href="#produk"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector('#produk').scrollIntoView({
+            behavior: 'smooth'
+        });
+    });
+    });
+
+    const produkSection = document.querySelector('#produk');
+
+    document.querySelectorAll('a[href="#produk"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            setTimeout(() => {
+                produkSection.style.boxShadow = "0 0 20px rgba(212,175,55,0.5)";
+                setTimeout(() => {
+                    produkSection.style.boxShadow = "none";
+                }, 1500);
+            }, 500);
+        });
     });
 });
 </script>

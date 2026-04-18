@@ -5,7 +5,7 @@ include '../config/koneksi.php';
 // hitung statistik sederhana
 $totalProduk = mysqli_num_rows(mysqli_query($koneksi, "SELECT * FROM produk"));
 $totalPesanan = mysqli_num_rows(mysqli_query($koneksi, "SELECT * FROM pesanan"));
-$totalUser = mysqli_num_rows(mysqli_query($koneksi, "SELECT * FROM user"));
+$totalUsers = mysqli_num_rows(mysqli_query($koneksi, "SELECT * FROM users"));
 ?>
 
 <h3>Dashboard Admin</h3>

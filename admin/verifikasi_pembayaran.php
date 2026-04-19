@@ -5,8 +5,11 @@ $id = $_GET['id'];
 
 /* UPDATE STATUS PESANAN SAJA */
 mysqli_query($koneksi,"
-UPDATE pesanan 
-SET status='diproses'
+UPDATE pesanan SET
+biaya_tambahan='$biaya',
+total_harga='$total_baru',
+status='$status',
+notif_dibaca = 0
 WHERE id_pesanan='$id'
 ");
 

@@ -76,6 +76,24 @@ $produk_populer = mysqli_query($koneksi,"
 ");
 ?>
 
+<?php
+$notif = 0;
+
+if(isset($_SESSION['user'])){
+    $id_user = $_SESSION['user']['id_user'];
+
+    $q_notif = mysqli_query($koneksi,"
+    SELECT COUNT(*) as total 
+    FROM notifikasi 
+    WHERE id_user='$id_user' AND status='unread'
+    ");
+
+    $notif = mysqli_fetch_assoc($q_notif)['total'];
+}
+?>
+
+
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -161,6 +179,22 @@ body::before {
     transform: scale(1.1);
     border-color: var(--leather-cream);
     box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+}
+
+.navbar .fa-bell {
+    font-size: 18px;
+    transition: 0.3s;
+}
+
+.navbar .fa-bell:hover {
+    color: #d4af37;
+    transform: scale(1.2);
+}
+
+.navbar .badge {
+    font-size: 10px;
+    padding: 5px 7px;
+    font-weight: bold;
 }
 
 .nav-link {
@@ -547,6 +581,7 @@ body::before {
     background: linear-gradient(to right, transparent, #d4af37, transparent);
     margin: 20px 0 30px;
 }
+
 </style>
 
 </head>
@@ -616,23 +651,17 @@ body::before {
             <?php if(isset($_SESSION['user'])){ ?>
 
             <!-- NOTIF -->
-            <li class="nav-item me-3">
-                <a href="user/notifikasi.php" class="nav-link position-relative">
-                    <i class="fa fa-bell"></i>
+          <li class="nav-item me-3">
+            <a href="user/notifikasi.php" class="position-relative text-light">
+                <i class="fa fa-bell fa-lg"></i>
 
-                    <?php
-                    $id_user = $_SESSION['user']['id_user'];
-                    $cek = mysqli_query($koneksi,"SELECT COUNT(*) as total FROM notifikasi WHERE id_user='$id_user' AND status='unread'");
-                    $jumlah = mysqli_num_rows($cek);
-
-                    if($jumlah > 0){
-                    ?>
-                    <span class="badge notification-badge position-absolute top-0 start-100 translate-middle">
-                        <?php echo $jumlah; ?>
-                    </span>
-                    <?php } ?>
-                </a>
-            </li>
+                <?php if($notif > 0){ ?>
+                <span class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle">
+                    <?= $notif ?>
+                </span>
+                <?php } ?>
+            </a>
+        </li>
             
             <?php } ?>
 

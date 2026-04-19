@@ -1,4 +1,4 @@
-<?php
+<?php 
 session_start();
 include '../config/koneksi.php';
 
@@ -8,9 +8,16 @@ if(!isset($_SESSION['user'])){
     exit;
 }
 
-// CEK KERANJANG
-if(!isset($_SESSION['keranjang']) || empty($_SESSION['keranjang'])){
-    echo "<script>alert('Keranjang masih kosong'); window.location='keranjang.php';</script>";
+// 🔥 AMBIL DATA BELANJA
+if(isset($_SESSION['beli_sekarang'])){
+    $keranjang = $_SESSION['beli_sekarang'];
+} else {
+    $keranjang = $_SESSION['keranjang'] ?? [];
+}
+
+// CEK KOSONG
+if(empty($keranjang)){
+    echo "<script>alert('Tidak ada produk'); window.location='../index.php';</script>";
     exit;
 }
 ?>
@@ -30,16 +37,13 @@ if(!isset($_SESSION['keranjang']) || empty($_SESSION['keranjang'])){
     cursor: pointer;
     transition: 0.2s;
 }
-
 .payment-box:hover {
     border-color: #0d6efd;
     background: #f8f9fa;
 }
-
 .payment-box input {
     margin-right: 10px;
 }
-
 .payment-logo {
     height: 35px;
     margin-right: 10px;
@@ -53,6 +57,12 @@ if(!isset($_SESSION['keranjang']) || empty($_SESSION['keranjang'])){
 
 <h3>Checkout Pesanan</h3>
 <hr>
+
+<?php if(isset($_SESSION['beli_sekarang'])){ ?>
+<div class="alert alert-info">
+    Mode: Beli Langsung
+</div>
+<?php } ?>
 
 <form method="POST" action="proses_checkout.php">
 
@@ -90,7 +100,7 @@ if(!isset($_SESSION['keranjang']) || empty($_SESSION['keranjang'])){
 </div>
 
 <div class="col-md-12 mb-3">
-    <label>Detail Alamat (Jalan, RT/RW, dll)</label>
+    <label>Detail Alamat</label>
     <textarea name="detail_alamat" class="form-control" required></textarea>
 </div>
 
@@ -101,7 +111,7 @@ if(!isset($_SESSION['keranjang']) || empty($_SESSION['keranjang'])){
     <input type="text" name="telepon" class="form-control" required>
 </div>
 
-<!-- ================= METODE PEMBAYARAN ================= -->
+<!-- METODE PEMBAYARAN -->
 <h5 class="mt-4">Pilih Pembayaran</h5>
 
 <?php
@@ -113,9 +123,7 @@ $kategori = [
 ];
 
 foreach($kategori as $tipe => $label){
-
     $q = mysqli_query($koneksi, "SELECT * FROM metode_pembayaran WHERE tipe='$tipe'");
-
     if(mysqli_num_rows($q) > 0){
 ?>
 
@@ -129,10 +137,8 @@ foreach($kategori as $tipe => $label){
         <?php while($m = mysqli_fetch_array($q)){ ?>
 
         <label class="payment-box d-flex align-items-center">
-            <input type="radio" name="id_metode"
-                   value="<?php echo $m['id_metode']; ?>" required>
+            <input type="radio" name="id_metode" value="<?php echo $m['id_metode']; ?>" required>
 
-            <!-- LOGO -->
             <?php if(!empty($m['logo'])){ ?>
                 <img src="../uploads/logo/<?php echo $m['logo']; ?>" class="payment-logo">
             <?php } ?>
@@ -140,7 +146,6 @@ foreach($kategori as $tipe => $label){
             <div>
                 <b><?php echo $m['nama_metode']; ?></b><br>
 
-                <!-- INFO PEMBAYARAN -->
                 <?php if($m['tipe'] != 'cod'){ ?>
                 <small class="text-muted">
                     <?php echo $m['nomor']; ?> a.n <?php echo $m['atas_nama']; ?>
@@ -156,7 +161,6 @@ foreach($kategori as $tipe => $label){
 
 <?php } } ?>
 
-<!-- QRIS AUTO MUNCUL -->
 <div id="qris-box" style="display:none;" class="text-center mt-3">
     <h5>Scan QRIS</h5>
     <img src="../uploads/qris.png" width="250">
@@ -169,7 +173,7 @@ foreach($kategori as $tipe => $label){
 <?php
 $total = 0;
 
-foreach($_SESSION['keranjang'] as $id => $qty){
+foreach($keranjang as $id => $qty){
     $q = mysqli_query($koneksi,"SELECT * FROM produk WHERE id_produk='$id'");
     $d = mysqli_fetch_array($q);
 
@@ -191,19 +195,12 @@ foreach($_SESSION['keranjang'] as $id => $qty){
 
 </div>
 
-<!-- SCRIPT QRIS -->
 <script>
 const radios = document.querySelectorAll('input[name="id_metode"]');
-
 radios.forEach(r => {
     r.addEventListener('change', function(){
         let label = this.closest('.payment-box').innerText;
-
-        if(label.includes('QRIS')){
-            document.getElementById('qris-box').style.display = 'block';
-        } else {
-            document.getElementById('qris-box').style.display = 'none';
-        }
+        document.getElementById('qris-box').style.display = label.includes('QRIS') ? 'block' : 'none';
     });
 });
 </script>

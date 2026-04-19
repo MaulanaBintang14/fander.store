@@ -21,6 +21,14 @@ if(isset($_POST['login'])){
     } else {
         echo "<script>alert('Email atau password salah');</script>";
     }
+
+    if(isset($_SESSION['redirect'])){
+    $redirect = $_SESSION['redirect'];
+    unset($_SESSION['redirect']);
+    echo "<script>window.location='../$redirect';</script>";
+    } else {
+        echo "<script>window.location='../index.php';</script>";
+    }
 }
 ?>
 

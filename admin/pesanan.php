@@ -1,7 +1,12 @@
 <?php
 include '../config/koneksi.php';
 
-$data = mysqli_query($koneksi,"SELECT * FROM pesanan ORDER BY id_pesanan DESC");
+$q = mysqli_query($koneksi,"
+SELECT p.*, u.nama 
+FROM pesanan p
+LEFT JOIN users u ON p.id_user = u.id_user
+ORDER BY p.id_pesanan DESC
+");
 ?>
 
 <!DOCTYPE html>
@@ -17,45 +22,80 @@ $data = mysqli_query($koneksi,"SELECT * FROM pesanan ORDER BY id_pesanan DESC");
 <h3>Data Pesanan</h3>
 <hr>
 
-<table class="table table-bordered">
+<table class="table table-bordered table-striped">
+<thead>
 <tr>
     <th>No</th>
+    <th>Nama</th>
     <th>Tanggal</th>
     <th>Total</th>
     <th>Status</th>
+    <th>Tipe</th>
     <th>Aksi</th>
 </tr>
+</thead>
 
-<?php $no=1; while($d=mysqli_fetch_array($data)){ ?>
+<tbody>
+
+<?php 
+$no=1; 
+while($d=mysqli_fetch_array($q)){ 
+?>
 
 <tr>
-    <td><?php echo $no++; ?></td>
-    <td><?php echo $d['tanggal']; ?></td>
-    <td>Rp <?php echo number_format($d['total_harga']); ?></td>
-    <td><?php echo $d['status']; ?></td>
+    <td><?= $no++; ?></td>
+    <td><?= $d['nama']; ?></td>
+    <td><?= $d['tanggal']; ?></td>
+    <td>Rp <?= number_format($d['total_harga']); ?></td>
+    <td><?= $d['status']; ?></td>
 
+    <!-- TIPE -->
+    <td>
+        <?php if(!empty($d['catatan'])){ ?>
+            <span class="badge bg-warning text-dark">Pre Order</span>
+        <?php } else { ?>
+            <span class="badge bg-primary">Biasa</span>
+        <?php } ?>
+    </td>
+
+    <!-- AKSI -->
     <td>
 
-        <!-- DETAIL -->
-        <a href="detail_pesanan.php?id=<?php echo $d['id_pesanan']; ?>" 
-           class="btn btn-info btn-sm">Detail</a>
+        <!-- DETAIL / PREORDER -->
+        <?php if(!empty($d['catatan'])){ ?>
+            <a href="proses_preorder_admin.php?id=<?= $d['id_pesanan']; ?>" 
+               class="btn btn-sm btn-warning mb-1">
+               Proses Preorder
+            </a>
+        <?php } else { ?>
+            <a href="detail_pesanan.php?id=<?= $d['id_pesanan']; ?>" 
+               class="btn btn-sm btn-info mb-1">
+               Detail
+            </a>
+        <?php } ?>
 
         <!-- VERIFIKASI -->
         <?php if($d['status']=="menunggu verifikasi"){ ?>
-        <a href="verifikasi_pembayaran.php?id=<?php echo $d['id_pesanan']; ?>" 
-           class="btn btn-success btn-sm">Verifikasi</a>
+            <a href="verifikasi_pembayaran.php?id=<?= $d['id_pesanan']; ?>" 
+               class="btn btn-success btn-sm mb-1">
+               Verifikasi
+            </a>
         <?php } ?>
 
         <!-- KIRIM -->
         <?php if($d['status']=="diproses"){ ?>
-        <a href="kirim_pesanan.php?id=<?php echo $d['id_pesanan']; ?>" 
-           class="btn btn-warning btn-sm">Kirim</a>
+            <a href="kirim_pesanan.php?id=<?= $d['id_pesanan']; ?>" 
+               class="btn btn-warning btn-sm mb-1">
+               Kirim
+            </a>
         <?php } ?>
 
         <!-- SELESAI -->
         <?php if($d['status']=="dikirim"){ ?>
-        <a href="selesai_pesanan.php?id=<?php echo $d['id_pesanan']; ?>" 
-           class="btn btn-primary btn-sm">Selesai</a>
+            <a href="selesai_pesanan.php?id=<?= $d['id_pesanan']; ?>" 
+               class="btn btn-primary btn-sm mb-1">
+               Selesai
+            </a>
         <?php } ?>
 
     </td>
@@ -63,6 +103,7 @@ $data = mysqli_query($koneksi,"SELECT * FROM pesanan ORDER BY id_pesanan DESC");
 
 <?php } ?>
 
+</tbody>
 </table>
 
 </div>

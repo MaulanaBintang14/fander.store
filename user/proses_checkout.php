@@ -2,36 +2,49 @@
 session_start();
 include '../config/koneksi.php';
 
+// ================= LOGIN =================
 if(!isset($_SESSION['user'])){
-    echo "<script>alert('Silakan login'); window.location='login.php';</script>";
+    echo "<script>alert('Login dulu'); window.location='login.php';</script>";
     exit;
 }
 
 $id_user = $_SESSION['user']['id_user'];
 $tanggal = date('Y-m-d H:i:s');
 
-/* ================= TOTAL ================= */
-$total_belanja = 0;
+// ================= AMBIL KERANJANG =================
+$keranjang = $_SESSION['beli_sekarang'] ?? $_SESSION['keranjang'] ?? [];
 
-foreach($_SESSION['keranjang'] as $id_produk => $jumlah){
-    $produk = mysqli_fetch_assoc(mysqli_query($koneksi,"SELECT * FROM produk WHERE id_produk='$id_produk'"));
-    $subtotal = $produk['harga'] * $jumlah;
-    $total_belanja += $subtotal;
+if(empty($keranjang)){
+    echo "<script>alert('Keranjang kosong'); window.location='../index.php';</script>";
+    exit;
 }
 
-/* ================= METODE ================= */
-$id_metode = $_POST['id_metode'];
+// ================= HITUNG TOTAL =================
+$total_belanja = 0;
 
-$metode_data = mysqli_fetch_assoc(mysqli_query($koneksi,
+foreach($keranjang as $id_produk => $jumlah){
+
+    $produk = mysqli_fetch_assoc(mysqli_query($koneksi,
+    "SELECT harga FROM produk WHERE id_produk='$id_produk'"));
+
+    if($produk){
+        $total_belanja += $produk['harga'] * $jumlah;
+    }
+}
+
+// DEBUG (hapus nanti kalau sudah normal)
+// echo $total_belanja; die;
+
+// ================= METODE =================
+$id_metode = $_POST['id_metode'];
+$metode = mysqli_fetch_assoc(mysqli_query($koneksi,
 "SELECT * FROM metode_pembayaran WHERE id_metode='$id_metode'"));
 
-$tipe = $metode_data['tipe'];
+$tipe = $metode['tipe'];
 
-/* ================= DATA USER ================= */
+// ================= DATA =================
 $nama = $_POST['nama'];
 $telepon = $_POST['telepon'];
-
-/* ================= ALAMAT BARU ================= */
 $provinsi = $_POST['provinsi'];
 $kota = $_POST['kota'];
 $kecamatan = $_POST['kecamatan'];
@@ -39,12 +52,12 @@ $desa = $_POST['desa'];
 $kode_pos = $_POST['kode_pos'];
 $detail_alamat = $_POST['detail_alamat'];
 
-/* ================= STATUS ================= */
-$status = ($tipe == "cod") 
-    ? "menunggu konfirmasi admin" 
+// ================= STATUS =================
+$status = ($tipe == "cod")
+    ? "menunggu konfirmasi admin"
     : "menunggu pembayaran";
 
-/* ================= INSERT PESANAN ================= */
+// ================= INSERT PESANAN =================
 mysqli_query($koneksi,"
 INSERT INTO pesanan
 (id_user, tanggal, total_harga, status, id_metode,
@@ -58,28 +71,43 @@ VALUES
 
 $id_pesanan = mysqli_insert_id($koneksi);
 
-/* ================= DETAIL ================= */
-foreach($_SESSION['keranjang'] as $id_produk => $jumlah){
+// ================= DETAIL =================
+foreach($keranjang as $id_produk => $jumlah){
 
-    $produk = mysqli_fetch_assoc(mysqli_query($koneksi,"SELECT * FROM produk WHERE id_produk='$id_produk'"));
+    $produk = mysqli_fetch_assoc(mysqli_query($koneksi,
+    "SELECT * FROM produk WHERE id_produk='$id_produk'"));
+
     $subtotal = $produk['harga'] * $jumlah;
 
     mysqli_query($koneksi,"
-    INSERT INTO detail_pesanan(id_pesanan, id_produk, jumlah, subtotal)
+    INSERT INTO detail_pesanan(id_pesanan,id_produk,jumlah,subtotal)
     VALUES('$id_pesanan','$id_produk','$jumlah','$subtotal')
     ");
 
     mysqli_query($koneksi,"
-    UPDATE produk SET stok = stok - $jumlah WHERE id_produk='$id_produk'
+    UPDATE produk SET stok = stok - $jumlah 
+    WHERE id_produk='$id_produk'
     ");
 }
 
-/* ================= CLEAR CART ================= */
-unset($_SESSION['keranjang']);
+// ================= NOTIF =================
+mysqli_query($koneksi,"
+INSERT INTO notifikasi(id_user,id_pesanan,pesan,link,status)
+VALUES(
+'$id_user',
+'$id_pesanan',
+'Pesanan berhasil dibuat',
+'detail_pesanan.php?id=$id_pesanan',
+'unread'
+)
+");
 
-/* ================= REDIRECT ================= */
+// ================= CLEAR =================
+unset($_SESSION['keranjang']);
+unset($_SESSION['beli_sekarang']);
+
+// ================= REDIRECT =================
 echo "<script>
 alert('Checkout berhasil!');
 window.location='pesanan_saya.php';
 </script>";
-?>

@@ -8,8 +8,11 @@ if(isset($_POST['kirim'])){
     $resi = $_POST['resi'];
 
     mysqli_query($koneksi,"
-    UPDATE pesanan 
-    SET status='dikirim', resi='$resi'
+    UPDATE pesanan SET
+    biaya_tambahan='$biaya',
+    total_harga='$total_baru',
+    status='$status',
+    notif_dibaca = 0
     WHERE id_pesanan='$id'
     ");
 

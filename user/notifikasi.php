@@ -4,8 +4,11 @@ include '../config/koneksi.php';
 
 $id_user = $_SESSION['user']['id_user'];
 
-mysqli_query($koneksi,
-"UPDATE notifikasi SET status='read' WHERE id_user='$id_user'");
+$q = mysqli_query($koneksi,"
+SELECT * FROM pesanan 
+WHERE id_user='$id_user'
+ORDER BY id_pesanan DESC
+");
 ?>
 
 <!DOCTYPE html>
@@ -16,27 +19,45 @@ mysqli_query($koneksi,
 </head>
 
 <body>
-
 <div class="container mt-4">
+
 <h3>Notifikasi</h3>
 <hr>
 
-<?php
-$data = mysqli_query($koneksi,
-"SELECT * FROM notifikasi WHERE id_user='$id_user' ORDER BY id_notif DESC");
+<?php while($d = mysqli_fetch_assoc($q)){ ?>
 
-while($d = mysqli_fetch_array($data)){
-?>
+<div class="card mb-3 <?= $d['notif_dibaca'] ? '' : 'border-primary'; ?>">
+    <div class="card-body">
 
-<div class="alert alert-info">
-    <?php echo $d['pesan']; ?>
-    <br>
-    <small><?php echo $d['tanggal']; ?></small>
+        <b>Pesanan #<?= $d['id_pesanan']; ?></b><br>
+
+        <?php if(!empty($d['catatan'])){ ?>
+            <span class="badge bg-warning text-dark">Pre Order</span><br>
+        <?php } ?>
+
+        Status:
+        <b><?= $d['status']; ?></b><br>
+
+        Total:
+        Rp <?= number_format($d['total_harga']); ?><br>
+
+        <a href="pesanan_saya.php" class="btn btn-sm btn-primary mt-2">
+            Lihat Pesanan
+        </a>
+
+    </div>
 </div>
 
 <?php } ?>
 
 </div>
-
 </body>
 </html>
+
+<?php
+// AUTO READ
+mysqli_query($koneksi,"
+UPDATE pesanan SET notif_dibaca=1 
+WHERE id_user='$id_user'
+");
+?>

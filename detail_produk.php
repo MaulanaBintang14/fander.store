@@ -2,11 +2,24 @@
 session_start();
 include 'config/koneksi.php';
 
+// CEK ID
+if(!isset($_GET['id'])){
+    echo "<script>
+    alert('Produk tidak ditemukan');
+    window.location='index.php';
+    </script>";
+    exit;
+}
+
 $id = $_GET['id'];
 
-$data = mysqli_query($koneksi, "SELECT * FROM produk WHERE id_produk='$id'");
-$produk = mysqli_fetch_array($data);
+// AMANKAN QUERY
+$id = mysqli_real_escape_string($koneksi, $id);
 
+$data = mysqli_query($koneksi, "SELECT * FROM produk WHERE id_produk='$id'");
+$produk = mysqli_fetch_assoc($data);
+
+// CEK DATA
 if(!$produk){
     echo "<script>
     alert('Produk tidak ditemukan');
@@ -21,7 +34,7 @@ if(!$produk){
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title><?php echo $produk['nama_produk']; ?> - Fander Leather</title>
+<title><?= $produk['nama_produk']; ?> - Fander Leather</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -78,44 +91,45 @@ body {
 
 <div class="row">
 
-    <!-- GAMBAR PRODUK -->
+    <!-- GAMBAR -->
     <div class="col-md-5 text-center">
-        <img src="admin/uploads/<?php echo $produk['gambar']; ?>" 
+        <img src="admin/uploads/<?= $produk['gambar']; ?>" 
              class="img-fluid product-image">
     </div>
 
-    <!-- DETAIL PRODUK -->
+    <!-- DETAIL -->
     <div class="col-md-7">
 
-        <h2><?php echo $produk['nama_produk']; ?></h2>
+        <h2><?= $produk['nama_produk']; ?></h2>
         <hr>
 
         <p class="price">
-            Rp <?php echo number_format($produk['harga']); ?>
+            Rp <?= number_format($produk['harga']); ?>
         </p>
 
         <p class="stock">
             <i class="fa fa-box"></i>
-            Stok Tersedia: <?php echo $produk['stok']; ?>
+            Stok Tersedia: <?= $produk['stok']; ?>
         </p>
 
         <hr>
 
         <h5>Deskripsi Produk</h5>
-        <p>
-            <?php echo nl2br($produk['deskripsi']); ?>
-        </p>
+        <p><?= nl2br($produk['deskripsi']); ?></p>
 
         <hr>
 
+        <?php if($produk['stok'] > 0){ ?>
+
+        <!-- FORM KERANJANG -->
         <form method="POST" action="user/tambah_keranjang.php">
 
-            <input type="hidden" name="id_produk" value="<?php echo $produk['id_produk']; ?>">
+            <input type="hidden" name="id_produk" value="<?= $produk['id_produk']; ?>">
 
             <div class="mb-3">
                 <label>Jumlah</label>
                 <input type="number" name="jumlah" class="form-control" 
-                       value="1" min="1" max="<?php echo $produk['stok']; ?>" required>
+                       value="1" min="1" max="<?= $produk['stok']; ?>" required>
             </div>
 
             <button class="btn btn-warning w-100 mb-2" name="keranjang">
@@ -124,12 +138,22 @@ body {
 
         </form>
 
-        <a href="user/checkout_langsung.php?id=<?php echo $produk['id_produk']; ?>" 
+        <!-- BELI SEKARANG (FIXED) -->
+        <a href="user/beli_sekarang.php?id=<?= $produk['id_produk']; ?>" 
            class="btn btn-success w-100 mb-2">
             <i class="fa fa-bolt"></i> Beli Sekarang
         </a>
 
-        <a href="user/custom_order.php?id=<?php echo $produk['id_produk']; ?>" 
+        <?php } else { ?>
+
+        <button class="btn btn-secondary w-100 mb-2" disabled>
+            Stok Habis
+        </button>
+
+        <?php } ?>
+
+        <!-- PRE ORDER -->
+        <a href="user/preorder.php?id=<?= $produk['id_produk']; ?>" 
            class="btn btn-custom w-100">
             <i class="fa fa-paint-brush"></i> Pesan Custom / Pre Order
         </a>

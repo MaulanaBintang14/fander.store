@@ -6,6 +6,7 @@ include '../config/koneksi.php';
 $totalProduk = mysqli_num_rows(mysqli_query($koneksi, "SELECT * FROM produk"));
 $totalPesanan = mysqli_num_rows(mysqli_query($koneksi, "SELECT * FROM pesanan"));
 $totalUsers = mysqli_num_rows(mysqli_query($koneksi, "SELECT * FROM users"));
+$totalUser = mysqli_num_rows(mysqli_query($koneksi,"SELECT * FROM users"));
 ?>
 
 <h3>Dashboard Admin</h3>

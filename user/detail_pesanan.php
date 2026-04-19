@@ -2,32 +2,23 @@
 session_start();
 include '../config/koneksi.php';
 
-if(!isset($_SESSION['user'])){
-    header("location:login.php");
-    exit;
-}
+$id = $_GET['id'];
 
-$id_user = $_SESSION['user']['id_user'];
-$id = $_GET['id'] ?? 0;
-
-/* JOIN PESANAN + METODE + PEMBAYARAN */
-$ambil = mysqli_query($koneksi, "
-SELECT 
-    p.*, 
-    m.nama_metode, m.tipe,
-    pb.bukti_transfer
+// ================= PESANAN =================
+$p = mysqli_fetch_assoc(mysqli_query($koneksi,"
+SELECT p.*, m.nama_metode 
 FROM pesanan p
 LEFT JOIN metode_pembayaran m ON p.id_metode = m.id_metode
-LEFT JOIN pembayaran pb ON p.id_pesanan = pb.id_pesanan
-WHERE p.id_pesanan='$id' AND p.id_user='$id_user'
+WHERE p.id_pesanan='$id'
+"));
+
+// ================= DETAIL =================
+$d = mysqli_query($koneksi,"
+SELECT dp.*, pr.nama_produk 
+FROM detail_pesanan dp
+LEFT JOIN produk pr ON dp.id_produk = pr.id_produk
+WHERE dp.id_pesanan='$id'
 ");
-
-if(mysqli_num_rows($ambil) == 0){
-    echo "<script>alert('Pesanan tidak ditemukan'); location='pesanan_saya.php';</script>";
-    exit;
-}
-
-$p = mysqli_fetch_assoc($ambil);
 ?>
 
 <!DOCTYPE html>
@@ -38,34 +29,51 @@ $p = mysqli_fetch_assoc($ambil);
 </head>
 
 <body>
+
 <div class="container mt-4">
 
 <h3>Detail Pesanan</h3>
 <hr>
 
-<p><b>Tanggal:</b> <?php echo date('d M Y H:i', strtotime($p['tanggal'])); ?></p>
-<p><b>Status:</b> <?php echo ucfirst($p['status']); ?></p>
-<p><b>Total:</b> Rp <?php echo number_format($p['total_harga']); ?></p>
-<p><b>Metode:</b> <?php echo $p['nama_metode']; ?> (<?php echo $p['tipe']; ?>)</p>
+<p><b>Nama:</b> <?= $p['nama_penerima'] ?: '-' ?></p>
+<p><b>Telepon:</b> <?= $p['telepon'] ?: '-' ?></p>
 
-<hr>
-
-<!-- ================= ALAMAT ================= -->
-<h5>Alamat Pengiriman</h5>
-
-<p>
-<?php echo $p['nama_penerima']; ?><br>
-<?php echo $p['telepon']; ?><br><br>
-
-<?php echo $p['detail_alamat']; ?><br>
-<?php echo $p['desa']; ?>, <?php echo $p['kecamatan']; ?><br>
-<?php echo $p['kota']; ?>, <?php echo $p['provinsi']; ?><br>
-Kode Pos: <?php echo $p['kode_pos']; ?>
+<p><b>Alamat:</b><br>
+<?= $p['detail_alamat'] ?: '-' ?><br>
+<?= $p['kecamatan'] ?>, <?= $p['kota'] ?><br>
+<?= $p['provinsi'] ?><br>
+Kode Pos: <?= $p['kode_pos'] ?>
 </p>
 
+<p><b>Metode:</b> <?= $p['nama_metode'] ?: '-' ?></p>
+<p><b>Status:</b> <?= $p['status'] ?></p>
+
 <hr>
 
-<h5>Produk</h5>
+<!-- ================= PREORDER INFO ================= -->
+<?php if(!empty($p['catatan'])){ ?>
+
+<div class="alert alert-info">
+<b>🛠 Pre Order</b><br>
+
+<b>Catatan:</b><br>
+<?= $p['catatan']; ?><br><br>
+
+<?php if($p['file_custom']){ ?>
+<img src="../uploads/custom/<?= $p['file_custom']; ?>" width="150">
+<?php } ?>
+
+<?php if($p['biaya_tambahan'] > 0){ ?>
+<hr>
+<b>Biaya Custom:</b> Rp <?= number_format($p['biaya_tambahan']); ?>
+<?php } ?>
+
+</div>
+
+<?php } ?>
+
+<!-- ================= PRODUK ================= -->
+<h5>Produk yang dipesan</h5>
 
 <table class="table table-bordered">
 <tr>
@@ -74,61 +82,47 @@ Kode Pos: <?php echo $p['kode_pos']; ?>
     <th>Subtotal</th>
 </tr>
 
-<?php
-$detail = mysqli_query($koneksi, "
-SELECT dp.*, pr.nama_produk 
-FROM detail_pesanan dp
-JOIN produk pr ON dp.id_produk = pr.id_produk
-WHERE dp.id_pesanan='$id'
-");
-
-while($d = mysqli_fetch_array($detail)){
-?>
+<?php while($x = mysqli_fetch_array($d)){ ?>
 <tr>
-    <td><?php echo $d['nama_produk']; ?></td>
-    <td><?php echo $d['jumlah']; ?></td>
-    <td>Rp <?php echo number_format($d['subtotal']); ?></td>
+<td><?= $x['nama_produk']; ?></td>
+<td><?= $x['jumlah']; ?></td>
+<td>Rp <?= number_format($x['subtotal']); ?></td>
 </tr>
 <?php } ?>
+
 </table>
 
 <hr>
 
+<!-- ================= TOTAL ================= -->
+<h4>Total: Rp <?= number_format($p['total_harga']); ?></h4>
+
 <!-- ================= PEMBAYARAN ================= -->
 <h5>Pembayaran</h5>
 
-<?php if($p['tipe'] == "cod"){ ?>
+<?php if(empty($p['bukti_pembayaran'])){ ?>
 
-<div class="alert alert-info">
-    COD - Bayar di tempat saat barang diterima
+<div class="alert alert-warning">
+Belum ada bukti pembayaran
 </div>
 
-<?php } elseif(!empty($p['bukti_transfer'])){ ?>
-
-<img src="../uploads/bukti/<?php echo $p['bukti_transfer']; ?>" 
-     width="300" 
-     class="img-thumbnail">
+<?php if($p['status'] == 'menunggu pembayaran'){ ?>
+<a href="upload_bukti.php?id=<?= $p['id_pesanan']; ?>" class="btn btn-primary">
+Upload Bukti Pembayaran
+</a>
+<?php } ?>
 
 <?php } else { ?>
 
-<div class="alert alert-warning">
-    Belum ada bukti pembayaran
-</div>
-
-<a href="upload_bukti.php?id=<?php echo $id; ?>" class="btn btn-primary">
-    Upload Bukti
-</a>
+<img src="../uploads/bukti/<?= $p['bukti_pembayaran']; ?>" width="200">
 
 <?php } ?>
 
 <br><br>
 
-<?php if(!empty($p['resi'])){ ?>
-<p><b>Nomor Resi:</b> <?php echo $p['resi']; ?></p>
-<?php } ?>
-
 <a href="pesanan_saya.php" class="btn btn-secondary">Kembali</a>
 
 </div>
+
 </body>
 </html>

@@ -2,58 +2,130 @@
 include 'header.php';
 include '../config/koneksi.php';
 
-// hitung statistik sederhana
+/* =======================
+   STATISTIK
+======================= */
 $totalProduk = mysqli_num_rows(mysqli_query($koneksi, "SELECT * FROM produk"));
 $totalPesanan = mysqli_num_rows(mysqli_query($koneksi, "SELECT * FROM pesanan"));
-$totalUsers = mysqli_num_rows(mysqli_query($koneksi, "SELECT * FROM users"));
-$totalUser = mysqli_num_rows(mysqli_query($koneksi,"SELECT * FROM users"));
+$totalUser = mysqli_num_rows(mysqli_query($koneksi, "SELECT * FROM users"));
+
+/* =======================
+   STATUS COUNT
+======================= */
+$menunggu = mysqli_fetch_assoc(mysqli_query($koneksi,"SELECT COUNT(*) as jml FROM pesanan WHERE status='menunggu pembayaran'"))['jml'];
+
+$diproses = mysqli_fetch_assoc(mysqli_query($koneksi,"SELECT COUNT(*) as jml FROM pesanan WHERE status='diproses'"))['jml'];
+
+$dikirim = mysqli_fetch_assoc(mysqli_query($koneksi,"SELECT COUNT(*) as jml FROM pesanan WHERE status='dikirim'"))['jml'];
+
+$selesai = mysqli_fetch_assoc(mysqli_query($koneksi,"SELECT COUNT(*) as jml FROM pesanan WHERE status='selesai'"))['jml'];
+
+/* =======================
+   DATA TERBARU
+======================= */
+$data = mysqli_query($koneksi,"
+SELECT * FROM pesanan 
+ORDER BY id_pesanan DESC 
+LIMIT 5
+");
 ?>
 
-<h3>Dashboard Admin</h3>
-<hr>
+<div class="container mt-4">
 
-<div class="row">
+<h3 class="mb-4">Dashboard Admin</h3>
 
-<!-- PRODUK -->
+<!-- =======================
+     CARD UTAMA
+======================= -->
+<div class="row g-4">
+
 <div class="col-md-4">
-<div class="card bg-primary text-white">
-<div class="card-body">
-    <h5>Manajemen Produk</h5>
-    <p>Total Produk: <?php echo $totalProduk; ?></p>
-    <a href="produk.php" class="btn btn-light btn-sm">Buka</a>
-</div>
+<div class="card shadow border-0 rounded-4 p-4 text-white"
+style="background: linear-gradient(135deg,#1e3c72,#2a5298);">
+    <div class="d-flex justify-content-between">
+        <div>
+            <h6>Produk</h6>
+            <h3><?= $totalProduk ?></h3>
+        </div>
+        <i class="fa fa-box fa-2x"></i>
+    </div>
+    <a href="produk.php" class="btn btn-light btn-sm mt-3">Kelola</a>
 </div>
 </div>
 
-<!-- PESANAN -->
 <div class="col-md-4">
-<div class="card bg-success text-white">
-<div class="card-body">
-    <h5>Data Pesanan</h5>
-    <p>Total Pesanan: <?php echo $totalPesanan; ?></p>
-    <a href="pesanan.php" class="btn btn-light btn-sm">Buka</a>
-</div>
+<div class="card shadow border-0 rounded-4 p-4 text-white"
+style="background: linear-gradient(135deg,#11998e,#38ef7d);">
+    <div class="d-flex justify-content-between">
+        <div>
+            <h6>Pesanan</h6>
+            <h3><?= $totalPesanan ?></h3>
+        </div>
+        <i class="fa fa-shopping-cart fa-2x"></i>
+    </div>
+    <a href="pesanan.php" class="btn btn-light btn-sm mt-3">Lihat</a>
 </div>
 </div>
 
-<!-- USER -->
 <div class="col-md-4">
-<div class="card bg-warning text-white">
-<div class="card-body">
-    <h5>Data User</h5>
-    <p>Total User: <?php echo $totalUser; ?></p>
-    <a href="#" class="btn btn-light btn-sm">Buka</a>
-</div>
+<div class="card shadow border-0 rounded-4 p-4 text-white"
+style="background: linear-gradient(135deg,#f7971e,#ffd200);">
+    <div class="d-flex justify-content-between">
+        <div>
+            <h6>User</h6>
+            <h3><?= $totalUser ?></h3>
+        </div>
+        <i class="fa fa-users fa-2x"></i>
+    </div>
 </div>
 </div>
 
 </div>
 
-<hr>
+<!-- =======================
+     STATUS RINGKAS
+======================= -->
+<div class="row mt-4 g-3">
 
-<h5>Status Pesanan Terbaru</h5>
+<div class="col-md-3">
+<div class="card p-3 shadow-sm rounded-4 text-center">
+<h6>Menunggu</h6>
+<h4><?= $menunggu ?></h4>
+</div>
+</div>
 
-<table class="table table-bordered">
+<div class="col-md-3">
+<div class="card p-3 shadow-sm rounded-4 text-center">
+<h6>Diproses</h6>
+<h4><?= $diproses ?></h4>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card p-3 shadow-sm rounded-4 text-center">
+<h6>Dikirim</h6>
+<h4><?= $dikirim ?></h4>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card p-3 shadow-sm rounded-4 text-center">
+<h6>Selesai</h6>
+<h4><?= $selesai ?></h4>
+</div>
+</div>
+
+</div>
+
+<!-- =======================
+     TABEL PESANAN
+======================= -->
+<h5 class="mt-5 mb-3">Pesanan Terbaru</h5>
+
+<div class="card shadow-sm border-0 rounded-4 p-3">
+<table class="table align-middle">
+
+<thead class="table-light">
 <tr>
     <th>No</th>
     <th>Tanggal</th>
@@ -61,23 +133,54 @@ $totalUser = mysqli_num_rows(mysqli_query($koneksi,"SELECT * FROM users"));
     <th>Total</th>
     <th>Status</th>
 </tr>
+</thead>
 
-<?php
-$no = 1;
-$data = mysqli_query($koneksi,
-"SELECT * FROM pesanan ORDER BY id_pesanan DESC LIMIT 5");
-
-while($d = mysqli_fetch_array($data)){
+<tbody>
+<?php 
+$no = 1; 
+while($d = mysqli_fetch_array($data)){ 
 ?>
 <tr>
-    <td><?php echo $no++; ?></td>
-    <td><?php echo $d['tanggal']; ?></td>
-    <td><?php echo $d['nama_penerima']; ?></td>
-    <td>Rp <?php echo number_format($d['total_harga']); ?></td>
-    <td><?php echo $d['status']; ?></td>
+
+<td><?= $no++ ?></td>
+
+<td><?= date('d M Y H:i', strtotime($d['tanggal'])) ?></td>
+
+<td><?= $d['nama_penerima'] ?: '-' ?></td>
+
+<td>
+<b>Rp <?= number_format($d['total_harga']) ?></b>
+</td>
+
+<td>
+<?php
+$status = $d['status'];
+
+if($status == 'menunggu pembayaran'){
+    echo '<span class="badge bg-warning text-dark">Menunggu</span>';
+}
+elseif($status == 'diproses'){
+    echo '<span class="badge bg-info">Diproses</span>';
+}
+elseif($status == 'dikirim'){
+    echo '<span class="badge bg-primary">Dikirim</span>';
+}
+elseif($status == 'selesai'){
+    echo '<span class="badge bg-success">Selesai</span>';
+}
+else{
+    echo '<span class="badge bg-secondary">'.$status.'</span>';
+}
+?>
+</td>
+
 </tr>
 <?php } ?>
+</tbody>
 
 </table>
+</div>
+
+</div>
 
 <?php include 'footer.php'; ?>

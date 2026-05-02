@@ -636,11 +636,11 @@ body::before {
             </li>
 
             <li class="nav-item">
-                <a class="nav-link" href="#">Cara Order</a>
+                <a class="nav-link" href="cara_order.php">Cara Order</a>
             </li>
 
             <li class="nav-item">
-                <a class="nav-link" href="#">Kontak</a>
+                <a class="nav-link" href="kontak.php">Kontak</a>
             </li>
 
         </ul>
@@ -746,14 +746,14 @@ body::before {
        <h3 class="section-title">
             <?php
                 if(!empty($search)){
-                    echo "Hasil pencarian: " . htmlspecialchars($search);
-                }
-                elseif(!empty($id_kategori)){
-                     echo "Kategori: " . $k['nama_kategori'];
-                }
-                else{
-                    echo "Produk Terbaru";
-                }
+                echo "Hasil pencarian: " . htmlspecialchars($search);
+            }
+            elseif(!empty($id_kategori) && isset($k['nama_kategori'])){
+                echo "Kategori: " . $k['nama_kategori'];
+            }
+            else{
+                echo "Produk Terbaru";
+            }
                 ?>
         </h3>
 

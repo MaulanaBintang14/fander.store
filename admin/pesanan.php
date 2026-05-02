@@ -14,19 +14,28 @@ ORDER BY p.id_pesanan DESC
 <head>
 <title>Data Pesanan</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+.badge-status {
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 8px;
+}
+</style>
+
 </head>
 
 <body>
 <div class="container mt-4">
 
-<h3>Data Pesanan</h3>
+<h3>📦 Data Pesanan</h3>
 <hr>
 
-<table class="table table-bordered table-striped">
-<thead>
+<table class="table table-bordered table-hover">
+<thead class="table-dark">
 <tr>
     <th>No</th>
-    <th>Nama</th>
+    <th>Customer</th>
     <th>Tanggal</th>
     <th>Total</th>
     <th>Status</th>
@@ -44,10 +53,36 @@ while($d=mysqli_fetch_array($q)){
 
 <tr>
     <td><?= $no++; ?></td>
-    <td><?= $d['nama']; ?></td>
-    <td><?= $d['tanggal']; ?></td>
-    <td>Rp <?= number_format($d['total_harga']); ?></td>
-    <td><?= $d['status']; ?></td>
+
+    <!-- NAMA -->
+    <td><?= $d['nama'] ?? '-'; ?></td>
+
+    <!-- TANGGAL -->
+    <td><?= date('d M Y H:i', strtotime($d['tanggal'])); ?></td>
+
+    <!-- TOTAL -->
+    <td>
+        <b class="text-success">
+            Rp <?= number_format($d['total_harga']); ?>
+        </b>
+    </td>
+
+    <!-- STATUS -->
+    <td>
+        <?php 
+        if($d['status'] == 'menunggu pembayaran'){
+            echo '<span class="badge bg-secondary badge-status">Menunggu Pembayaran</span>';
+        } elseif($d['status'] == 'diproses'){
+            echo '<span class="badge bg-info badge-status">Diproses</span>';
+        } elseif($d['status'] == 'dikirim'){
+            echo '<span class="badge bg-warning text-dark badge-status">Dikirim</span>';
+        } elseif($d['status'] == 'selesai'){
+            echo '<span class="badge bg-success badge-status">Selesai</span>';
+        } else {
+            echo '<span class="badge bg-dark badge-status">'.$d['status'].'</span>';
+        }
+        ?>
+    </td>
 
     <!-- TIPE -->
     <td>
@@ -61,38 +96,37 @@ while($d=mysqli_fetch_array($q)){
     <!-- AKSI -->
     <td>
 
-        <!-- DETAIL / PREORDER -->
+        <!-- DETAIL -->
+        <a href="detail_pesanan.php?id=<?= $d['id_pesanan']; ?>" 
+           class="btn btn-sm btn-info mb-1">
+           Detail
+        </a>
+
+        <!-- PREORDER -->
         <?php if(!empty($d['catatan'])){ ?>
             <a href="proses_preorder_admin.php?id=<?= $d['id_pesanan']; ?>" 
                class="btn btn-sm btn-warning mb-1">
-               Proses Preorder
-            </a>
-        <?php } else { ?>
-            <a href="detail_pesanan.php?id=<?= $d['id_pesanan']; ?>" 
-               class="btn btn-sm btn-info mb-1">
-               Detail
+               Proses PO
             </a>
         <?php } ?>
 
-        <!-- VERIFIKASI -->
-        <?php if($d['status']=="menunggu verifikasi"){ ?>
-            <a href="verifikasi_pembayaran.php?id=<?= $d['id_pesanan']; ?>" 
+        <!-- FLOW STATUS -->
+        <?php if($d['status']=="menunggu pembayaran"){ ?>
+            <a href="update_status.php?id=<?= $d['id_pesanan']; ?>&status=diproses" 
                class="btn btn-success btn-sm mb-1">
-               Verifikasi
+               Proses
             </a>
         <?php } ?>
 
-        <!-- KIRIM -->
         <?php if($d['status']=="diproses"){ ?>
-            <a href="kirim_pesanan.php?id=<?= $d['id_pesanan']; ?>" 
+            <a href="update_status.php?id=<?= $d['id_pesanan']; ?>&status=dikirim" 
                class="btn btn-warning btn-sm mb-1">
                Kirim
             </a>
         <?php } ?>
 
-        <!-- SELESAI -->
         <?php if($d['status']=="dikirim"){ ?>
-            <a href="selesai_pesanan.php?id=<?= $d['id_pesanan']; ?>" 
+            <a href="update_status.php?id=<?= $d['id_pesanan']; ?>&status=selesai" 
                class="btn btn-primary btn-sm mb-1">
                Selesai
             </a>

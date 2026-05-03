@@ -1,12 +1,17 @@
 <?php
 include '../config/koneksi.php';
 
+// QUERY DATA
 $q = mysqli_query($koneksi,"
 SELECT p.*, u.nama 
 FROM pesanan p
 LEFT JOIN users u ON p.id_user = u.id_user
 ORDER BY p.id_pesanan DESC
 ");
+
+if(!$q){
+    die("Query error: " . mysqli_error($koneksi));
+}
 ?>
 
 <!DOCTYPE html>
@@ -21,6 +26,17 @@ ORDER BY p.id_pesanan DESC
     padding: 6px 10px;
     border-radius: 8px;
 }
+
+.table-hover tbody tr:hover {
+    background-color: #f5f5f5;
+}
+
+/* Highlight kondisi penting */
+.row-menunggu { background-color: #fff3cd; }
+.row-verifikasi { background-color: #cfe2ff; }
+.row-batal { background-color: #f8d7da; }
+
+.btn-sm { margin-bottom: 3px; }
 </style>
 
 </head>
@@ -28,10 +44,10 @@ ORDER BY p.id_pesanan DESC
 <body>
 <div class="container mt-4">
 
-<h3>📦 Data Pesanan</h3>
+<h3 class="mb-3">📦 Data Pesanan</h3>
 <hr>
 
-<table class="table table-bordered table-hover">
+<table class="table table-bordered table-hover align-middle">
 <thead class="table-dark">
 <tr>
     <th>No</th>
@@ -40,22 +56,34 @@ ORDER BY p.id_pesanan DESC
     <th>Total</th>
     <th>Status</th>
     <th>Tipe</th>
-    <th>Aksi</th>
+    <th width="300">Aksi</th>
 </tr>
 </thead>
 
 <tbody>
 
 <?php 
-$no=1; 
-while($d=mysqli_fetch_array($q)){ 
+$no = 1; 
+while($d = mysqli_fetch_assoc($q)){ 
+
+// WARNA ROW
+$rowClass = '';
+if($d['status'] == 'menunggu pembayaran'){
+    $rowClass = 'row-menunggu';
+}
+if($d['status'] == 'menunggu verifikasi'){
+    $rowClass = 'row-verifikasi';
+}
+if($d['status'] == 'dibatalkan'){
+    $rowClass = 'row-batal';
+}
 ?>
 
-<tr>
+<tr class="<?= $rowClass; ?>">
     <td><?= $no++; ?></td>
 
-    <!-- NAMA -->
-    <td><?= $d['nama'] ?? '-'; ?></td>
+    <!-- CUSTOMER -->
+    <td><b><?= !empty($d['nama']) ? $d['nama'] : 'Guest'; ?></b></td>
 
     <!-- TANGGAL -->
     <td><?= date('d M Y H:i', strtotime($d['tanggal'])); ?></td>
@@ -70,16 +98,27 @@ while($d=mysqli_fetch_array($q)){
     <!-- STATUS -->
     <td>
         <?php 
-        if($d['status'] == 'menunggu pembayaran'){
-            echo '<span class="badge bg-secondary badge-status">Menunggu Pembayaran</span>';
-        } elseif($d['status'] == 'diproses'){
-            echo '<span class="badge bg-info badge-status">Diproses</span>';
-        } elseif($d['status'] == 'dikirim'){
-            echo '<span class="badge bg-warning text-dark badge-status">Dikirim</span>';
-        } elseif($d['status'] == 'selesai'){
-            echo '<span class="badge bg-success badge-status">Selesai</span>';
-        } else {
-            echo '<span class="badge bg-dark badge-status">'.$d['status'].'</span>';
+        switch($d['status']){
+            case 'menunggu pembayaran':
+                echo '<span class="badge bg-secondary badge-status">Menunggu Pembayaran</span>';
+                break;
+            case 'menunggu verifikasi':
+                echo '<span class="badge bg-primary badge-status">Verifikasi</span>';
+                break;
+            case 'diproses':
+                echo '<span class="badge bg-info badge-status">Diproses</span>';
+                break;
+            case 'dikirim':
+                echo '<span class="badge bg-warning text-dark badge-status">Dikirim</span>';
+                break;
+            case 'selesai':
+                echo '<span class="badge bg-success badge-status">Selesai</span>';
+                break;
+            case 'dibatalkan':
+                echo '<span class="badge bg-danger badge-status">Dibatalkan</span>';
+                break;
+            default:
+                echo '<span class="badge bg-dark">'.$d['status'].'</span>';
         }
         ?>
     </td>
@@ -98,37 +137,62 @@ while($d=mysqli_fetch_array($q)){
 
         <!-- DETAIL -->
         <a href="detail_pesanan.php?id=<?= $d['id_pesanan']; ?>" 
-           class="btn btn-sm btn-info mb-1">
+           class="btn btn-info btn-sm">
            Detail
         </a>
 
         <!-- PREORDER -->
         <?php if(!empty($d['catatan'])){ ?>
             <a href="proses_preorder_admin.php?id=<?= $d['id_pesanan']; ?>" 
-               class="btn btn-sm btn-warning mb-1">
+               class="btn btn-warning btn-sm">
                Proses PO
             </a>
         <?php } ?>
 
-        <!-- FLOW STATUS -->
+        <!-- MENUNGGU PEMBAYARAN -->
         <?php if($d['status']=="menunggu pembayaran"){ ?>
+            <span class="text-muted d-block">Menunggu user bayar</span>
+        <?php } ?>
+
+        <!-- VERIFIKASI -->
+        <?php if($d['status']=="menunggu verifikasi"){ ?>
             <a href="update_status.php?id=<?= $d['id_pesanan']; ?>&status=diproses" 
-               class="btn btn-success btn-sm mb-1">
-               Proses
+               class="btn btn-success btn-sm">
+               Verifikasi & Proses
             </a>
         <?php } ?>
 
+        <!-- DIPROSES -->
         <?php if($d['status']=="diproses"){ ?>
-            <a href="update_status.php?id=<?= $d['id_pesanan']; ?>&status=dikirim" 
-               class="btn btn-warning btn-sm mb-1">
-               Kirim
+            <span class="text-muted d-block">Sedang packing</span>
+
+            <a href="form_resi.php?id=<?= $d['id_pesanan']; ?>" 
+               class="btn btn-warning btn-sm">
+               Input Resi
             </a>
         <?php } ?>
 
+        <!-- DIKIRIM -->
         <?php if($d['status']=="dikirim"){ ?>
+            <span class="text-muted d-block">Dalam pengiriman</span>
+
             <a href="update_status.php?id=<?= $d['id_pesanan']; ?>&status=selesai" 
-               class="btn btn-primary btn-sm mb-1">
+               class="btn btn-primary btn-sm">
                Selesai
+            </a>
+
+            <a href="update_status.php?id=<?= $d['id_pesanan']; ?>&status=diproses" 
+               class="btn btn-secondary btn-sm">
+               ← Kembali
+            </a>
+        <?php } ?>
+
+        <!-- BATALKAN -->
+        <?php if($d['status']!="selesai" && $d['status']!="dibatalkan"){ ?>
+            <a href="update_status.php?id=<?= $d['id_pesanan']; ?>&status=dibatalkan"
+               class="btn btn-danger btn-sm"
+               onclick="return confirm('Yakin batalkan pesanan?')">
+               Batalkan
             </a>
         <?php } ?>
 

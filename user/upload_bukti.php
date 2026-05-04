@@ -78,27 +78,113 @@ if(isset($_POST['kirim'])){
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html>
 <head>
 <title>Upload Bukti Pembayaran</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+body {
+    background: linear-gradient(135deg, #3e1f0d, #8b5e34);
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* BOX */
+.main-box {
+    background: #f8f5f0;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+}
+
+/* TITLE */
+.title {
+    color: #5a3e2b;
+    font-weight: bold;
+}
+
+/* INPUT */
+.form-control {
+    border-radius: 10px;
+    border: 1px solid #d6c3a3;
+}
+
+/* BUTTON */
+.btn-gold {
+    background: #c89b3c;
+    color: white;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+.btn-gold:hover {
+    background: #a67c2b;
+}
+
+.btn-outline-brown {
+    border: 1px solid #5a3e2b;
+    color: #5a3e2b;
+    border-radius: 10px;
+}
+
+/* PREVIEW */
+.preview-img {
+    margin-top: 10px;
+    max-width: 200px;
+    border-radius: 10px;
+    display: none;
+}
+</style>
 </head>
+
 <body>
-<div class="container mt-4">
-<h4>Upload Bukti Pembayaran</h4>
+
+<div class="container mt-5">
+
+<div class="main-box">
+
+<h4 class="title mb-3">📤 Upload Bukti Pembayaran</h4>
 <hr>
 
 <form method="post" enctype="multipart/form-data">
+
     <div class="mb-3">
         <label>Foto Bukti Transfer</label>
-        <input type="file" name="bukti" class="form-control" accept="image/*" required>
+        <input type="file" name="bukti" id="bukti" class="form-control" accept="image/*" required>
+
+        <!-- PREVIEW -->
+        <img id="preview" class="preview-img">
     </div>
-    <button class="btn btn-primary" name="kirim">Kirim Bukti</button>
-    <a href="pesanan_saya.php" class="btn btn-secondary">Kembali</a>
+
+    <button class="btn btn-gold" name="kirim">
+        Kirim Bukti
+    </button>
+
+    <a href="pesanan_saya.php" class="btn btn-outline-brown">
+        Kembali
+    </a>
+
 </form>
 
 </div>
+
+</div>
+
+<script>
+document.getElementById('bukti').addEventListener('change', function(e){
+    const file = e.target.files[0];
+    if(file){
+        const reader = new FileReader();
+        reader.onload = function(e){
+            const img = document.getElementById('preview');
+            img.src = e.target.result;
+            img.style.display = 'block';
+        }
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+
 </body>
 </html>

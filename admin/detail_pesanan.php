@@ -35,12 +35,79 @@ $p = mysqli_fetch_assoc($ambil);
 <head>
 <title>Detail Pesanan</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+/* BACKGROUND */
+body {
+    background: linear-gradient(135deg, #3e1f0d, #8b5e34);
+    min-height: 100vh;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* WRAPPER */
+.container {
+    background: rgba(248,245,240,0.95);
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+}
+
+/* TITLE */
+h3 {
+    color: #5a3e2b;
+    font-weight: bold;
+}
+
+/* TABLE */
+.table {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.table thead {
+    background: #5a3e2b;
+    color: white;
+}
+
+/* BUTTON */
+.btn-primary {
+    background: #5a3e2b;
+    border: none;
+}
+
+.btn-success {
+    background: #2e7d32;
+    border: none;
+}
+
+.btn-dark {
+    background: #2c1a0f;
+    border: none;
+}
+
+.btn-secondary {
+    background: #6c757d;
+}
+
+/* ALERT */
+.alert {
+    border-radius: 12px;
+}
+
+/* IMAGE */
+.img-thumbnail {
+    border-radius: 12px;
+}
+</style>
+
 </head>
 
 <body>
+
 <div class="container mt-4">
 
-<h3>Detail Pesanan</h3>
+<h3>📦 Detail Pesanan</h3>
 <hr>
 
 <p><b>Nama:</b> <?php echo $p['nama_penerima']; ?></p>
@@ -54,7 +121,7 @@ Kode Pos: <?php echo $p['kode_pos']; ?>
 </p>
 
 <p><b>Metode:</b> <?php echo $p['nama_metode']; ?> (<?php echo $p['tipe']; ?>)</p>
-<p><b>Status:</b> <?php echo ucfirst($p['status']); ?></p>
+<p><b>Status:</b> <span style="color:#c89b3c;"><b><?php echo ucfirst($p['status']); ?></b></span></p>
 
 <hr>
 
@@ -78,7 +145,7 @@ WHERE dp.id_pesanan='$id'
 while($d = mysqli_fetch_array($detail)){
 ?>
 <tr>
-    <td><?php echo $d['nama_produk']; ?></td>
+    <td><b><?php echo $d['nama_produk']; ?></b></td>
     <td><?php echo $d['jumlah']; ?></td>
     <td>Rp <?php echo number_format($d['subtotal']); ?></td>
 </tr>
@@ -87,7 +154,6 @@ while($d = mysqli_fetch_array($detail)){
 
 <hr>
 
-<!-- 🔥 PEMBAYARAN -->
 <h5>Pembayaran</h5>
 
 <?php if($p['tipe'] == "cod"){ ?>
@@ -135,5 +201,6 @@ while($d = mysqli_fetch_array($detail)){
 <a href="pesanan.php" class="btn btn-secondary">Kembali</a>
 
 </div>
+
 </body>
 </html>

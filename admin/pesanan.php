@@ -21,34 +21,114 @@ if(!$q){
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
+/* BACKGROUND */
+body {
+    background: linear-gradient(135deg, #3e1f0d, #8b5e34);
+    min-height: 100vh;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* CONTAINER */
+.container {
+    background: rgba(248,245,240,0.95);
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+}
+
+/* TITLE */
+h3 {
+    color: #5a3e2b;
+    font-weight: bold;
+}
+
+/* TABLE */
+.table {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.table thead {
+    background: #5a3e2b !important;
+    color: white;
+}
+
+/* HOVER */
+.table-hover tbody tr:hover {
+    background-color: #f9f3e8;
+}
+
+/* BADGE */
 .badge-status {
     font-size: 12px;
     padding: 6px 10px;
     border-radius: 8px;
 }
 
-.table-hover tbody tr:hover {
-    background-color: #f5f5f5;
+/* ROW STATUS */
+.row-menunggu { background-color: #fff8e1; }
+.row-verifikasi { background-color: #e3f2fd; }
+.row-batal { background-color: #fdecea; }
+
+/* BUTTON */
+.btn-info {
+    background: #c89b3c;
+    border: none;
+    color: white;
 }
 
-/* Highlight kondisi penting */
-.row-menunggu { background-color: #fff3cd; }
-.row-verifikasi { background-color: #cfe2ff; }
-.row-batal { background-color: #f8d7da; }
+.btn-info:hover {
+    background: #a67c2b;
+}
 
-.btn-sm { margin-bottom: 3px; }
+.btn-warning {
+    background: #e0b84c;
+    border: none;
+}
+
+.btn-success {
+    background: #2e7d32;
+    border: none;
+}
+
+.btn-primary {
+    background: #5a3e2b;
+    border: none;
+}
+
+.btn-danger {
+    background: #8b2c2c;
+    border: none;
+}
+
+.btn-secondary {
+    background: #6c757d;
+}
+
+/* TEXT */
+.text-muted {
+    font-size: 12px;
+}
+
+/* BUTTON SPACING */
+.btn-sm {
+    margin-bottom: 3px;
+}
 </style>
 
 </head>
 
 <body>
+
 <div class="container mt-4">
 
 <h3 class="mb-3">📦 Data Pesanan</h3>
 <hr>
 
 <table class="table table-bordered table-hover align-middle">
-<thead class="table-dark">
+
+<thead>
 <tr>
     <th>No</th>
     <th>Customer</th>
@@ -66,7 +146,7 @@ if(!$q){
 $no = 1; 
 while($d = mysqli_fetch_assoc($q)){ 
 
-// WARNA ROW
+// WARNA ROW (TIDAK DIUBAH)
 $rowClass = '';
 if($d['status'] == 'menunggu pembayaran'){
     $rowClass = 'row-menunggu';
@@ -82,20 +162,16 @@ if($d['status'] == 'dibatalkan'){
 <tr class="<?= $rowClass; ?>">
     <td><?= $no++; ?></td>
 
-    <!-- CUSTOMER -->
     <td><b><?= !empty($d['nama']) ? $d['nama'] : 'Guest'; ?></b></td>
 
-    <!-- TANGGAL -->
     <td><?= date('d M Y H:i', strtotime($d['tanggal'])); ?></td>
 
-    <!-- TOTAL -->
     <td>
-        <b class="text-success">
+        <b style="color:#c89b3c;">
             Rp <?= number_format($d['total_harga']); ?>
         </b>
     </td>
 
-    <!-- STATUS -->
     <td>
         <?php 
         switch($d['status']){
@@ -123,7 +199,6 @@ if($d['status'] == 'dibatalkan'){
         ?>
     </td>
 
-    <!-- TIPE -->
     <td>
         <?php if(!empty($d['catatan'])){ ?>
             <span class="badge bg-warning text-dark">Pre Order</span>
@@ -132,16 +207,13 @@ if($d['status'] == 'dibatalkan'){
         <?php } ?>
     </td>
 
-    <!-- AKSI -->
     <td>
 
-        <!-- DETAIL -->
         <a href="detail_pesanan.php?id=<?= $d['id_pesanan']; ?>" 
            class="btn btn-info btn-sm">
            Detail
         </a>
 
-        <!-- PREORDER -->
         <?php if(!empty($d['catatan'])){ ?>
             <a href="proses_preorder_admin.php?id=<?= $d['id_pesanan']; ?>" 
                class="btn btn-warning btn-sm">
@@ -149,12 +221,10 @@ if($d['status'] == 'dibatalkan'){
             </a>
         <?php } ?>
 
-        <!-- MENUNGGU PEMBAYARAN -->
         <?php if($d['status']=="menunggu pembayaran"){ ?>
             <span class="text-muted d-block">Menunggu user bayar</span>
         <?php } ?>
 
-        <!-- VERIFIKASI -->
         <?php if($d['status']=="menunggu verifikasi"){ ?>
             <a href="update_status.php?id=<?= $d['id_pesanan']; ?>&status=diproses" 
                class="btn btn-success btn-sm">
@@ -162,7 +232,6 @@ if($d['status'] == 'dibatalkan'){
             </a>
         <?php } ?>
 
-        <!-- DIPROSES -->
         <?php if($d['status']=="diproses"){ ?>
             <span class="text-muted d-block">Sedang packing</span>
 
@@ -172,7 +241,6 @@ if($d['status'] == 'dibatalkan'){
             </a>
         <?php } ?>
 
-        <!-- DIKIRIM -->
         <?php if($d['status']=="dikirim"){ ?>
             <span class="text-muted d-block">Dalam pengiriman</span>
 
@@ -187,7 +255,6 @@ if($d['status'] == 'dibatalkan'){
             </a>
         <?php } ?>
 
-        <!-- BATALKAN -->
         <?php if($d['status']!="selesai" && $d['status']!="dibatalkan"){ ?>
             <a href="update_status.php?id=<?= $d['id_pesanan']; ?>&status=dibatalkan"
                class="btn btn-danger btn-sm"
@@ -205,5 +272,6 @@ if($d['status'] == 'dibatalkan'){
 </table>
 
 </div>
+
 </body>
 </html>

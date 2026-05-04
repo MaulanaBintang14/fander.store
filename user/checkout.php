@@ -21,7 +21,6 @@ if(empty($keranjang)){
     exit;
 }
 ?>
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -29,33 +28,84 @@ if(empty($keranjang)){
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
+body {
+    background: linear-gradient(135deg, #3e1f0d, #8b5e34);
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* BOX UTAMA */
+.main-box {
+    background: #f8f5f0;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+}
+
+/* TITLE */
+.title {
+    color: #5a3e2b;
+    font-weight: bold;
+}
+
+/* INPUT */
+.form-control {
+    border-radius: 10px;
+    border: 1px solid #d6c3a3;
+}
+
+/* PAYMENT */
 .payment-box {
-    border: 1px solid #ddd;
+    border: 1px solid #d6c3a3;
     border-radius: 12px;
     padding: 12px;
     margin-bottom: 10px;
     cursor: pointer;
     transition: 0.2s;
+    background: white;
 }
+
 .payment-box:hover {
-    border-color: #0d6efd;
-    background: #f8f9fa;
+    border-color: #c89b3c;
+    background: #fffaf2;
 }
-.payment-box input {
-    margin-right: 10px;
-}
+
 .payment-logo {
     height: 35px;
     margin-right: 10px;
 }
-</style>
 
+/* CARD */
+.card {
+    border-radius: 15px;
+    border: none;
+}
+
+/* BUTTON */
+.btn-gold {
+    background: #c89b3c;
+    color: white;
+    border-radius: 12px;
+    font-weight: bold;
+}
+
+.btn-gold:hover {
+    background: #a67c2b;
+}
+
+/* ALERT */
+.alert {
+    border-radius: 10px;
+}
+</style>
 </head>
 
 <body>
-<div class="container mt-4">
 
-<h3>Checkout Pesanan</h3>
+<div class="container mt-5">
+
+<div class="main-box">
+
+<h3 class="title mb-3">🧾 Checkout Pesanan</h3>
 <hr>
 
 <?php if(isset($_SESSION['beli_sekarang'])){ ?>
@@ -67,6 +117,8 @@ if(empty($keranjang)){
 <form method="POST" action="proses_checkout.php">
 
 <!-- DATA PENERIMA -->
+<h5 class="mt-3">Data Penerima</h5>
+
 <div class="mb-3">
     <label>Nama Penerima</label>
     <input type="text" name="nama" class="form-control" required>
@@ -112,7 +164,7 @@ if(empty($keranjang)){
 </div>
 
 <!-- METODE PEMBAYARAN -->
-<h5 class="mt-4">Pilih Pembayaran</h5>
+<h5 class="mt-4">Metode Pembayaran</h5>
 
 <?php
 $kategori = [
@@ -128,7 +180,7 @@ foreach($kategori as $tipe => $label){
 ?>
 
 <div class="card mb-3 shadow-sm">
-    <div class="card-header fw-bold bg-light">
+    <div class="card-header fw-bold" style="background:#e6d3b3; color:#5a3e2b;">
         <?php echo $label; ?>
     </div>
 
@@ -168,7 +220,8 @@ foreach($kategori as $tipe => $label){
 
 <hr>
 
-<h5>Rincian</h5>
+<!-- RINCIAN -->
+<h5>Rincian Belanja</h5>
 
 <?php
 $total = 0;
@@ -181,17 +234,21 @@ foreach($keranjang as $id => $qty){
     $total += $sub;
 ?>
 
-<p><?php echo $d['nama_produk']; ?> (<?php echo $qty; ?>)</p>
+<p><b><?php echo $d['nama_produk']; ?></b> (<?php echo $qty; ?>)</p>
 
 <?php } ?>
 
-<h4>Total: Rp <?php echo number_format($total); ?></h4>
+<h4 class="mt-3">Total: <span style="color:#c89b3c;">Rp <?php echo number_format($total); ?></span></h4>
 
 <input type="hidden" name="total_belanja" value="<?php echo $total; ?>">
 
-<button class="btn btn-success">Checkout</button>
+<button class="btn btn-gold mt-3 w-100">
+    🚀 Checkout Sekarang
+</button>
 
 </form>
+
+</div>
 
 </div>
 
